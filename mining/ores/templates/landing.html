@@ -4,9 +4,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Landing Page with Background</title>
+    <title>pharmacy management system</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon" href="/static/assets/img/vladimir-patkachakov-Mx6Xmf_nbRk-unsplash.jpg" type="image/jpg" />
+    <link rel="icon" href="/static/assets/img/medicine.png" type="image/jpg" />
 
     <style>
       /* Optional: dark overlay over background image */
@@ -14,7 +14,7 @@
         background: linear-gradient(
   rgba(0, 0, 0, 0.6),
   rgba(0, 0, 0, 0.6)
-), url('/static/assets/img/vladimir-patkachakov-Mx6Xmf_nbRk-unsplash.jpg');
+), url('/static/assets/img/medicine.png');
 ;
         background-size: cover;
         background-position: center;
@@ -71,7 +71,7 @@
     <!-- Navbar -->
     <header class="p-6">
       <div class="max-w-7xl mx-auto flex justify-between items-center">
-        <h1 class="text-2xl font-bold">TCIMS</h1></a>
+        <h1 class="text-2xl font-bold">PMS</h1></a>
         <nav>
           <ul class="flex gap-6 text-sm font-medium">
             <li><a href="{% url 'signup' %}" class="hover:text-blue-300">sign up</a></li>
@@ -86,7 +86,7 @@
       <div>
         <!-- <h2 class="text-4xl md:text-5xl font-extrabold mb-4">Welcome to Our Product</h2> -->
         <p class="text-lg md:text-xl mb-6 max-w-xl mx-auto text-gray-200">
-          join TUCASA CIVE freely by navigating at top-right link
+          THE BEST PHARMACEUTICAL SERVICES
         </p>
         <div class=" max-w-2xl mx-auto dark:bg-black-800 rounded-lg shadow-lg  transition-all duration-300">
           <div :class="{'text-white': dark, 'text-black': !dark}" class="transition-colors duration-300" id="posts">
@@ -117,7 +117,7 @@
               })
               .catch(error => {
                 console.error('Error fetching posts:', error);
-                document.getElementById('posts').innerHTML = '<p class="text-red-500">Failed to load posts.</p>';
+                document.getElementById('posts').innerHTML = '<p class="text-red-500"></p>';
               });
           });
         </script>
@@ -188,7 +188,7 @@
 
     <!-- Footer -->
     <footer class="text-center p-4 text-sm bg-black bg-opacity-40">
-      © 2025 TUCASA CIVE. Designed by Tesla Digest.
+      © 2025 pharmacy management system. Designed by Tesla Digest.
     </footer>
 
   </body>
