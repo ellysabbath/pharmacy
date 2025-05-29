@@ -1,0 +1,202 @@
+{% extends 'index.html' %}
+{% block title %}Add Customer & Purchase History{% endblock %}
+
+{% block content %}
+<div class="w-full px-4 sm:px-6 lg:px-8 py-6 bg-white dark:bg-gray-900">
+  
+  <div class="max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 space-y-8">
+
+    <!-- Add Customer Form -->
+    <form method="post" class="space-y-6" id="customer-form">
+      {% csrf_token %}
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white">👤 Customer Info</h3>
+
+      <div class="mt-8 grid grid-cols-3 gap-6">
+        <div>
+          <label class="block text-sm text-gray-700 dark:text-gray-200">Full Name</label>
+          <input type="text" name="full_name" required
+            class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border text-gray-900 dark:text-white">
+        </div>
+
+        <div>
+          <label class="block text-sm text-gray-700 dark:text-gray-200">Pharmacy Name</label>
+          <input type="text" name="pharmacy_name" value="Main Branch" required
+            class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border text-gray-900 dark:text-white">
+        </div>
+
+        <div>
+          <label class="block text-sm text-gray-700 dark:text-gray-200">Age</label>
+          <input type="number" name="age" required
+            class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border text-gray-900 dark:text-white">
+        </div>
+
+        <div>
+          <label class="block text-sm text-gray-700 dark:text-gray-200">Contact</label>
+          <input type="text" name="contact" required
+            class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border text-gray-900 dark:text-white">
+        </div>
+
+        <div>
+          <label class="block text-sm text-gray-700 dark:text-gray-200">Email</label>
+          <input type="email" name="email"
+            class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border text-gray-900 dark:text-white">
+        </div>
+      </div><br><br>
+
+      <div class="pt-6 text-right">
+        <button type="submit"
+          class="inline-flex items-center px-6 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700">
+          💾 Save Customer Info
+        </button>
+      </div>
+    </form>
+  </div>
+    <br><br>
+
+    <!-- Purchase History Form -->
+     <div class="max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 space-y-8">
+    <form method="post" class="space-y-6" id="purchase-form">
+      {% csrf_token %}
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white pt-6">🛒 Purchase History</h3>
+
+      <div class="mt-8 grid grid-cols-3 gap-6">
+        <div>
+          <label class="block text-sm text-gray-700 dark:text-gray-200">Customer</label>
+          <select name="customer" id="customer-select" required
+            class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border text-gray-900 dark:text-white">
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm text-gray-700 dark:text-gray-200">Expected Date</label>
+          <input type="date" name="expected_date" required
+            class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border text-gray-900 dark:text-white">
+        </div>
+
+        <div>
+          <label class="block text-sm text-gray-700 dark:text-gray-200">Medicine</label>
+          <input type="text" name="medicine" required
+            class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border text-gray-900 dark:text-white">
+        </div>
+
+        <div>
+          <label class="block text-sm text-gray-700 dark:text-gray-200">Pharmacy Name</label>
+          <input type="text" name="pharmacy_name" value="Main Branch" required
+            class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border text-gray-900 dark:text-white">
+        </div>
+
+        <div>
+          <label class="block text-sm text-gray-700 dark:text-gray-200">Quantity</label>
+          <input type="number" name="quantity" min="1" required
+            class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border text-gray-900 dark:text-white">
+        </div>
+      </div><br><br>
+
+      <div class="pt-6 text-right">
+        <button type="submit"
+          class="inline-flex items-center px-6 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700">
+          💾 Save Purchase History
+        </button>
+      </div>
+    </form>
+     </div>
+  </div>
+</div>
+
+<!-- JS for both forms -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const customerForm = document.getElementById('customer-form');
+  const purchaseForm = document.getElementById('purchase-form');
+  const customerSelect = document.getElementById('customer-select');
+
+  // Load customers for purchase form
+  fetch('/api/customers/')
+    .then(response => response.json())
+    .then(data => {
+      customerSelect.innerHTML = '';
+      data.forEach(customer => {
+        const option = document.createElement('option');
+        option.value = customer.id;
+        option.textContent = customer.full_name;
+        customerSelect.appendChild(option);
+      });
+    })
+    .catch(err => {
+      Swal.fire('Error', 'Failed to load customers', 'error');
+    });
+
+  // Customer form submission
+  customerForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const formData = new FormData(customerForm);
+    const customerData = {
+      full_name: formData.get('full_name'),
+      age: parseInt(formData.get('age')),
+      contact: formData.get('contact'),
+      email: formData.get('email'),
+      pharmacy_name: formData.get('pharmacy_name') || 'Main Branch'
+    };
+
+    fetch('/api/customers/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify(customerData)
+    })
+    .then(response => response.ok ? response.json() : response.json().then(err => { throw new Error(JSON.stringify(err)) }))
+    .then(data => {
+      Swal.fire('Success!', 'Customer info saved.', 'success');
+      customerForm.reset();
+    })
+    .catch(error => {
+      Swal.fire('Error', `Failed to save customer info: ${error.message}`, 'error');
+    });
+  });
+
+  // Purchase form submission
+  purchaseForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const formData = new FormData(purchaseForm);
+    const purchaseData = {
+      customer: formData.get('customer'),
+      expected_date: formData.get('expected_date'),
+      medicine: formData.get('medicine'),
+      quantity: parseInt(formData.get('quantity')),
+      pharmacy_name: formData.get('pharmacy_name')
+    };
+
+    fetch('/api/purchase-history/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+      },
+      body: JSON.stringify(purchaseData)
+    })
+    .then(response => response.ok ? response.json() : response.json().then(err => { throw new Error(JSON.stringify(err)) }))
+    .then(data => {
+      Swal.fire('Success!', 'Purchase history saved.', 'success');
+      purchaseForm.reset();
+    })
+    .catch(error => {
+      Swal.fire('Error', `Failed to save purchase history: ${error.message}`, 'error');
+    });
+  });
+
+  function getCookie(name) {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      cookie = cookie.trim();
+      if (cookie.startsWith(name + '=')) {
+        return decodeURIComponent(cookie.substring(name.length + 1));
+      }
+    }
+    return null;
+  }
+});
+</script>
+{% endblock %}

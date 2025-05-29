@@ -1,0 +1,846 @@
+{% extends 'index.html' %}
+
+{% block title %}Mining Tracks{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 transition-all duration-300">
+    <div :class="{'text-white': dark, 'text-black': !dark}" class="transition-colors duration-300">
+
+        <!-- Header and Global Create Button -->
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold">Reporting and Analysis</h2>
+            <button id="add-report-btn" class="bg-green-700 hover:bg-green-800 text-green-600 font-semibold py-2 px-4 rounded shadow transition">
+                ➕ Create Regulatory & Compliance Reporting
+            </button>
+        </div>
+
+        <!-- Table Base Styles -->
+        <style>
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 2rem;
+            }
+            th, td {
+                border: 1px solid #ddd;
+                padding: 12px;
+                text-align: left;
+            }
+            th {
+                background-color: #4CAF50;
+                color: white;
+            }
+            tr:hover {
+                background-color:gray;
+                color: hsl(120, 38%, 6%);
+            }
+            .action-btn {
+                padding: 4px 8px;
+                font-size: 0.9rem;
+                font-weight: 600;
+                border-radius: 0.25rem;
+                margin-right: 0.25rem;
+                cursor: pointer;
+                transition: background-color 0.2s ease-in-out;
+            }
+            .action-edit {
+                
+                color: #166534; /* green-800 */
+            }
+
+     .action-edit {
+                
+                color: #053f1b; /* green-800 */
+            }
+            .action-delete:hover {
+                color: rgb(179, 26, 26);
+            }
+            .create-report-btn {
+                background-color: #15803d; /* green-700 */
+                color: white;
+                font-weight: 600;
+                padding: 6px 12px;
+                border-radius: 0.375rem;
+                margin-bottom: 1rem;
+                cursor: pointer;
+                transition: background-color 0.2s ease-in-out;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+            }
+            .create-report-btn:hover {
+                background-color: #166534; /* green-800 */
+            }
+        </style>
+
+        <!-- 1. Regulatory Reporting -->
+        <h3 class="text-xl font-semibold mt-6 mb-2 flex justify-between items-center">
+            1. Regulatory & Compliance Reporting
+
+        </h3>
+       <div class="overflow-x-auto">
+  <table>
+    <thead>
+      <tr>
+        <th>Report Type</th>
+        <th>Description</th>
+        <th>Frequency</th>
+        <th>Submitted To</th>
+        <th>Compliance Notes</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="regulatory-reports-body">
+      <!-- Dynamic rows will be inserted here -->
+    </tbody>
+  </table>
+
+</div><br><br>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  // Get CSRF token from cookie
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.startsWith(name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+  const csrftoken = getCookie('csrftoken');
+
+  // Fetch and render all reports
+  async function fetchReports() {
+    try {
+      const res = await fetch('/api/regulatory/');
+      if (!res.ok) throw new Error('Failed to fetch reports');
+      const reports = await res.json();
+
+      const tbody = document.getElementById('regulatory-reports-body');
+      tbody.innerHTML = '';
+      reports.forEach(report => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${report.report_type}</td>
+          <td>${report.description}</td>
+          <td>${report.frequency}</td>
+          <td>${report.submitted_to}</td>
+          <td>${report.compliance_notes}</td>
+          <td>
+            <button class="btn-edit text-yellow-500 hover:underline" data-id="${report.id}">✏️ Edit</button>
+            <button class="btn-delete text-red-600 hover:underline" data-id="${report.id}">🗑️ Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+      setupEventListeners();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Setup listeners for dynamic buttons
+  function setupEventListeners() {
+    document.querySelectorAll('.btn-edit').forEach(btn =>
+      btn.addEventListener('click', () => handleEdit(btn.dataset.id))
+    );
+    document.querySelectorAll('.btn-delete').forEach(btn =>
+      btn.addEventListener('click', () => handleDelete(btn.dataset.id))
+    );
+  }
+
+  // Handle editing a report
+  async function handleEdit(id) {
+    try {
+      const res = await fetch(`/api/regulatory/${id}/`);
+      if (!res.ok) throw new Error('Failed to fetch report');
+      const report = await res.json();
+
+      const { value: formValues, isConfirmed } = await Swal.fire({
+        title: 'Edit Report',
+        html: `
+          <input id="swal-report-type" class="swal2-input" placeholder="Report Type" value="${report.report_type}">
+          <input id="swal-description" class="swal2-input" placeholder="Description" value="${report.description}">
+          <input id="swal-frequency" class="swal2-input" placeholder="Frequency" value="${report.frequency}">
+          <input id="swal-submitted-to" class="swal2-input" placeholder="Submitted To" value="${report.submitted_to}">
+          <input id="swal-compliance-notes" class="swal2-input" placeholder="Compliance Notes" value="${report.compliance_notes}">
+        `,
+        showCancelButton: true,
+        focusConfirm: false,
+        preConfirm: () => ({
+          report_type: document.getElementById('swal-report-type').value,
+          description: document.getElementById('swal-description').value,
+          frequency: document.getElementById('swal-frequency').value,
+          submitted_to: document.getElementById('swal-submitted-to').value,
+          compliance_notes: document.getElementById('swal-compliance-notes').value,
+        }),
+      });
+
+      if (!isConfirmed) return;
+
+      const updateRes = await fetch(`/api/regulatory/${id}/`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(formValues)
+      });
+
+      if (!updateRes.ok) throw new Error('Update failed');
+      Swal.fire('Updated!', 'Report updated successfully.', 'success');
+      fetchReports();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Handle deleting a report
+  async function handleDelete(id) {
+    const { isConfirmed } = await Swal.fire({
+      title: 'Are you sure?',
+      text: 'This action cannot be undone!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      const res = await fetch(`/api/regulatory/${id}/`, {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': csrftoken }
+      });
+
+      if (!res.ok) throw new Error('Delete failed');
+      Swal.fire('Deleted!', 'Report deleted successfully.', 'success');
+      fetchReports();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Handle adding a new report
+  async function handleAdd() {
+    const { value: formValues, isConfirmed } = await Swal.fire({
+      title: 'Add New Report',
+      html: `
+        <input id="swal-report-type" class="swal2-input" placeholder="Report Type">
+        <input id="swal-description" class="swal2-input" placeholder="Description">
+        <input id="swal-frequency" class="swal2-input" placeholder="Frequency">
+        <input id="swal-submitted-to" class="swal2-input" placeholder="Submitted To">
+        <input id="swal-compliance-notes" class="swal2-input" placeholder="Compliance Notes">
+      `,
+      showCancelButton: true,
+      focusConfirm: false,
+      preConfirm: () => ({
+        report_type: document.getElementById('swal-report-type').value,
+        description: document.getElementById('swal-description').value,
+        frequency: document.getElementById('swal-frequency').value,
+        submitted_to: document.getElementById('swal-submitted-to').value,
+        compliance_notes: document.getElementById('swal-compliance-notes').value,
+      }),
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      const res = await fetch('/api/regulatory/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(formValues)
+      });
+
+      if (!res.ok) throw new Error('Creation failed');
+      Swal.fire('Created!', 'New report added successfully.', 'success');
+      fetchReports();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Initialize everything on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    fetchReports();
+    const addBtn = document.getElementById('add-report-btn');
+    if (addBtn) addBtn.addEventListener('click', handleAdd);
+  });
+</script>
+
+
+
+
+
+        <!-- 2. Operational Reporting -->
+        <h3 class="text-xl font-semibold mt-6 mb-2 flex justify-between items-center">
+            2. Operational Reporting <hr>
+            <button  id="add-operational-btn" class="bg-green-700 hover:bg-green-800 text-green-600 font-semibold py-2 px-4 rounded shadow transition">
+                ➕ Create Operational Reporting
+            </button>
+        </h3>
+        <div class="overflow-x-auto">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Description</th>
+                        <th>Reporting Period</th>
+                        <th>Target / KPI</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+           <tbody id="operational-metrics-body">
+
+           </tbody>
+            </table>
+            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+
+
+  // Fetch operational metrics
+  async function fetchOperational() {
+    try {
+      const res = await fetch('/api/operational/');
+      if (!res.ok) throw new Error('Failed to fetch operational metrics');
+      const data = await res.json();
+
+      const tbody = document.getElementById('operational-metrics-body');
+      tbody.innerHTML = '';
+
+      data.forEach(metric => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${metric.metric}</td>
+          <td>${metric.description}</td>
+          <td>${metric.reporting_period}</td>
+          <td>${metric.target_kpi}</td>
+          <td>
+            <button class="btn-edit text-yellow-500 hover:underline" data-id="${metric.id}">✏️ Edit</button>
+            <button class="btn-delete text-red-600 hover:underline" data-id="${metric.id}">🗑️ Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      setupOperationalButtons();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Setup edit/delete button events
+  function setupOperationalButtons() {
+    document.querySelectorAll('.btn-edit').forEach(btn =>
+      btn.addEventListener('click', () => handleOperationalEdit(btn.dataset.id))
+    );
+    document.querySelectorAll('.btn-delete').forEach(btn =>
+      btn.addEventListener('click', () => handleOperationalDelete(btn.dataset.id))
+    );
+  }
+
+  // Add new metric
+  async function handleOperationalAdd() {
+    const { value: formValues, isConfirmed } = await Swal.fire({
+      title: 'Add New Operational Metric',
+      html: `
+        <input id="swal-metric" class="swal2-input" placeholder="Metric">
+        <input id="swal-description" class="swal2-input" placeholder="Description">
+        <input id="swal-reporting-period" class="swal2-input" placeholder="Reporting Period">
+        <input id="swal-target-kpi" class="swal2-input" placeholder="Target / KPI">
+      `,
+      showCancelButton: true,
+      focusConfirm: false,
+      preConfirm: () => ({
+        metric: document.getElementById('swal-metric').value,
+        description: document.getElementById('swal-description').value,
+        reporting_period: document.getElementById('swal-reporting-period').value,
+        target_kpi: document.getElementById('swal-target-kpi').value,
+      })
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      const res = await fetch('/api/operational/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(formValues)
+      });
+      if (!res.ok) throw new Error('Creation failed');
+      Swal.fire('Created!', 'Metric added successfully.', 'success');
+      fetchOperational();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Edit metric
+  async function handleOperationalEdit(id) {
+    try {
+      const res = await fetch(`/api/operational/${id}/`);
+      if (!res.ok) throw new Error('Failed to fetch metric');
+      const metric = await res.json();
+
+      const { value: formValues, isConfirmed } = await Swal.fire({
+        title: 'Edit Metric',
+        html: `
+          <input id="swal-metric" class="swal2-input" value="${metric.metric}" placeholder="Metric">
+          <input id="swal-description" class="swal2-input" value="${metric.description}" placeholder="Description">
+          <input id="swal-reporting-period" class="swal2-input" value="${metric.reporting_period}" placeholder="Reporting Period">
+          <input id="swal-target-kpi" class="swal2-input" value="${metric.target_kpi}" placeholder="Target / KPI">
+        `,
+        showCancelButton: true,
+        focusConfirm: false,
+        preConfirm: () => ({
+          metric: document.getElementById('swal-metric').value,
+          description: document.getElementById('swal-description').value,
+          reporting_period: document.getElementById('swal-reporting-period').value,
+          target_kpi: document.getElementById('swal-target-kpi').value,
+        })
+      });
+
+      if (!isConfirmed) return;
+
+      const updateRes = await fetch(`/api/operational/${id}/`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(formValues)
+      });
+
+      if (!updateRes.ok) throw new Error('Update failed');
+      Swal.fire('Updated!', 'Metric updated successfully.', 'success');
+      fetchOperational();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Delete metric
+  async function handleOperationalDelete(id) {
+    const { isConfirmed } = await Swal.fire({
+      title: 'Are you sure?',
+      text: 'This will permanently delete the metric.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      const res = await fetch(`/api/operational/${id}/`, {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': csrftoken }
+      });
+
+      if (!res.ok) throw new Error('Delete failed');
+      Swal.fire('Deleted!', 'Metric deleted successfully.', 'success');
+      fetchOperational();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Initialize on load
+  document.addEventListener('DOMContentLoaded', () => {
+    fetchOperational();
+    const addBtn = document.getElementById('add-operational-btn');
+    if (addBtn) addBtn.addEventListener('click', handleOperationalAdd);
+  });
+</script>
+
+        </div>
+
+        <!-- 3. Clinical Reporting -->
+        <h3 class="text-xl font-semibold mt-6 mb-2 flex justify-between items-center">
+            3. Clinical & Patient Outcome Reporting
+            <button id="add-clinical-btn" class="bg-green-700 hover:bg-green-800 text-green-600 font-semibold py-2 px-4 rounded shadow transition">
+                ➕ Create Clinical & Patient Outcome Reporting
+            </button>
+        </h3>
+        <div class="overflow-x-auto">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Clinical Metric</th>
+                        <th>Description</th>
+                        <th>Patient Impact</th>
+                        <th>Data Source</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+             <tbody id="clinical-metrics-body">
+
+
+
+             </tbody>
+            </table>
+            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  // Get CSRF token
+ 
+
+  // Fetch clinical metrics
+  async function fetchClinical() {
+    try {
+      const res = await fetch('/api/clinical/');
+      if (!res.ok) throw new Error('Failed to fetch clinical metrics');
+      const data = await res.json();
+
+      const tbody = document.getElementById('clinical-metrics-body');
+      tbody.innerHTML = '';
+
+      data.forEach(metric => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${metric.metric}</td>
+          <td>${metric.description}</td>
+          <td>${metric.patient_impact}</td>
+          <td>${metric.data_source}</td>
+          <td>
+            <button class="btn-edit text-yellow-500 hover:underline" data-id="${metric.id}">✏️ Edit</button>
+            <button class="btn-delete text-red-600 hover:underline" data-id="${metric.id}">🗑️ Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      setupClinicalButtons();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Setup edit/delete button events
+  function setupClinicalButtons() {
+    document.querySelectorAll('.btn-edit').forEach(btn =>
+      btn.addEventListener('click', () => handleClinicalEdit(btn.dataset.id))
+    );
+    document.querySelectorAll('.btn-delete').forEach(btn =>
+      btn.addEventListener('click', () => handleClinicalDelete(btn.dataset.id))
+    );
+  }
+
+  // Add new clinical metric
+  async function handleClinicalAdd() {
+    const { value: formValues, isConfirmed } = await Swal.fire({
+      title: 'Add New Clinical Metric',
+      html: `
+        <input id="swal-metric" class="swal2-input" placeholder="Clinical Metric">
+        <input id="swal-description" class="swal2-input" placeholder="Description">
+        <input id="swal-patient-impact" class="swal2-input" placeholder="Patient Impact">
+        <input id="swal-data-source" class="swal2-input" placeholder="Data Source">
+      `,
+      showCancelButton: true,
+      focusConfirm: false,
+      preConfirm: () => ({
+        metric: document.getElementById('swal-metric').value,
+        description: document.getElementById('swal-description').value,
+        patient_impact: document.getElementById('swal-patient-impact').value,
+        data_source: document.getElementById('swal-data-source').value,
+      })
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      const res = await fetch('/api/clinical/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(formValues)
+      });
+      if (!res.ok) throw new Error('Creation failed');
+      Swal.fire('Created!', 'Clinical metric added successfully.', 'success');
+      fetchClinical();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Edit clinical metric
+  async function handleClinicalEdit(id) {
+    try {
+      const res = await fetch(`/api/clinical/${id}/`);
+      if (!res.ok) throw new Error('Failed to fetch metric');
+      const metric = await res.json();
+
+      const { value: formValues, isConfirmed } = await Swal.fire({
+        title: 'Edit Clinical Metric',
+        html: `
+          <input id="swal-metric" class="swal2-input" value="${metric.metric}" placeholder="Clinical Metric">
+          <input id="swal-description" class="swal2-input" value="${metric.description}" placeholder="Description">
+          <input id="swal-patient-impact" class="swal2-input" value="${metric.patient_impact}" placeholder="Patient Impact">
+          <input id="swal-data-source" class="swal2-input" value="${metric.data_source}" placeholder="Data Source">
+        `,
+        showCancelButton: true,
+        focusConfirm: false,
+        preConfirm: () => ({
+          metric: document.getElementById('swal-metric').value,
+          description: document.getElementById('swal-description').value,
+          patient_impact: document.getElementById('swal-patient-impact').value,
+          data_source: document.getElementById('swal-data-source').value,
+        })
+      });
+
+      if (!isConfirmed) return;
+
+      const updateRes = await fetch(`/api/clinical/${id}/`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(formValues)
+      });
+
+      if (!updateRes.ok) throw new Error('Update failed');
+      Swal.fire('Updated!', 'Clinical metric updated successfully.', 'success');
+      fetchClinical();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Delete clinical metric
+  async function handleClinicalDelete(id) {
+    const { isConfirmed } = await Swal.fire({
+      title: 'Are you sure?',
+      text: 'This will permanently delete the clinical metric.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      const res = await fetch(`/api/clinical/${id}/`, {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': csrftoken }
+      });
+
+      if (!res.ok) throw new Error('Delete failed');
+      Swal.fire('Deleted!', 'Clinical metric deleted successfully.', 'success');
+      fetchClinical();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Initialize
+  document.addEventListener('DOMContentLoaded', () => {
+    fetchClinical();
+    const addBtn = document.getElementById('add-clinical-btn');
+    if (addBtn) addBtn.addEventListener('click', handleClinicalAdd);
+  });
+</script>
+
+        </div>
+
+        <!-- 4. Tools & Integration -->
+        <h3 class="text-xl font-semibold mt-6 mb-2 flex justify-between items-center">
+            4. Tools & Data Integration
+            <button id="add-tools-btn" class="bg-green-700 hover:bg-green-800 text-green-600 font-semibold py-2 px-4 rounded shadow transition">
+                ➕ Create Tools & Data Integration
+            </button>
+        </h3>
+        <div class="overflow-x-auto">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tool/System</th>
+                        <th>Purpose</th>
+                        <th>Example Vendors</th>
+                        <th>Integration Notes</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tools-body">
+
+                </tbody>
+            </table>
+            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+
+  // Fetch tools and populate table
+  async function fetchTools() {
+    try {
+      const res = await fetch('/api/tools/');
+      if (!res.ok) throw new Error('Failed to fetch tools');
+      const data = await res.json();
+
+      const tbody = document.getElementById('tools-body');
+      tbody.innerHTML = '';
+
+      data.forEach(tool => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${tool.tool_system}</td>
+          <td>${tool.purpose}</td>
+          <td>${tool.example_vendors}</td>
+          <td>${tool.integration_notes}</td>
+          <td>
+            <button class="btn-edit text-yellow-500 hover:underline" data-id="${tool.id}">✏️ Edit</button>
+            <button class="btn-delete text-red-600 hover:underline" data-id="${tool.id}">🗑️ Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      setupToolButtons();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Setup edit and delete buttons
+  function setupToolButtons() {
+    document.querySelectorAll('.btn-edit').forEach(btn =>
+      btn.addEventListener('click', () => handleToolEdit(btn.dataset.id))
+    );
+    document.querySelectorAll('.btn-delete').forEach(btn =>
+      btn.addEventListener('click', () => handleToolDelete(btn.dataset.id))
+    );
+  }
+
+  // Add new tool
+  async function handleToolAdd() {
+    const { value: formValues, isConfirmed } = await Swal.fire({
+      title: 'Add New Tool/System',
+      html: `
+        <input id="swal-tool_system" class="swal2-input" placeholder="Tool/System">
+        <input id="swal-purpose" class="swal2-input" placeholder="Purpose">
+        <input id="swal-example_vendors" class="swal2-input" placeholder="Example Vendors">
+        <input id="swal-integration_notes" class="swal2-input" placeholder="Integration Notes">
+      `,
+      showCancelButton: true,
+      focusConfirm: false,
+      preConfirm: () => ({
+        tool_system: document.getElementById('swal-tool_system').value,
+        purpose: document.getElementById('swal-purpose').value,
+        example_vendors: document.getElementById('swal-example_vendors').value,
+        integration_notes: document.getElementById('swal-integration_notes').value,
+      })
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      const res = await fetch('/api/tools/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(formValues)
+      });
+      if (!res.ok) throw new Error('Creation failed');
+      Swal.fire('Created!', 'Tool/System added successfully.', 'success');
+      fetchTools();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Edit tool
+  async function handleToolEdit(id) {
+    try {
+      const res = await fetch(`/api/tools/${id}/`);
+      if (!res.ok) throw new Error('Failed to fetch tool');
+      const tool = await res.json();
+
+      const { value: formValues, isConfirmed } = await Swal.fire({
+        title: 'Edit Tool/System',
+        html: `
+          <input id="swal-tool_system" class="swal2-input" value="${tool.tool_system}" placeholder="Tool/System">
+          <input id="swal-purpose" class="swal2-input" value="${tool.purpose}" placeholder="Purpose">
+          <input id="swal-example_vendors" class="swal2-input" value="${tool.example_vendors}" placeholder="Example Vendors">
+          <input id="swal-integration_notes" class="swal2-input" value="${tool.integration_notes}" placeholder="Integration Notes">
+        `,
+        showCancelButton: true,
+        focusConfirm: false,
+        preConfirm: () => ({
+          tool_system: document.getElementById('swal-tool_system').value,
+          purpose: document.getElementById('swal-purpose').value,
+          example_vendors: document.getElementById('swal-example_vendors').value,
+          integration_notes: document.getElementById('swal-integration_notes').value,
+        })
+      });
+
+      if (!isConfirmed) return;
+
+      const updateRes = await fetch(`/api/tools/${id}/`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(formValues)
+      });
+
+      if (!updateRes.ok) throw new Error('Update failed');
+      Swal.fire('Updated!', 'Tool/System updated successfully.', 'success');
+      fetchTools();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Delete tool
+  async function handleToolDelete(id) {
+    const { isConfirmed } = await Swal.fire({
+      title: 'Are you sure?',
+      text: 'This will permanently delete the tool/system.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      const res = await fetch(`/api/tools/${id}/`, {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': csrftoken }
+      });
+
+      if (!res.ok) throw new Error('Delete failed');
+      Swal.fire('Deleted!', 'Tool/System deleted successfully.', 'success');
+      fetchTools();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Initialize
+  document.addEventListener('DOMContentLoaded', () => {
+    fetchTools();
+    const addBtn = document.getElementById('add-tools-btn');
+    if (addBtn) addBtn.addEventListener('click', handleToolAdd);
+  });
+</script>
+
+        </div>
+
+    </div>
+</div>
+{% endblock %}

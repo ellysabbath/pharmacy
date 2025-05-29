@@ -1,0 +1,460 @@
+{% extends 'index.html' %}
+{% block title %}Mining Net Time Covered{% endblock %}
+
+{% block content %}
+<div class="w-full px-2 sm:px-6 lg:px-8 py-6 bg-white dark:bg-gray-900">
+  <div class="max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6 space-y-8">
+
+    <!-- Header -->
+    <h2 class="text-xl sm:text-3xl font-bold text-center text-gray-900 dark:text-white">
+      💳 Sales & Billing - POS Dashboard
+    </h2>
+
+    <!-- Sales Entries Table -->
+    <div class="overflow-x-auto bg-gray-100 dark:bg-gray-700 p-4 rounded-md">
+      <h3 class="text-md sm:text-lg font-semibold text-gray-800 dark:text-white mb-4">Sales Entries</h3>
+      <table class="w-full min-w-[600px] text-xs sm:text-sm text-left text-gray-800 dark:text-gray-100 border-collapse">
+        <thead class="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-100">
+          <tr>
+            <th class="px-3 py-2">pharmacy Name</th>
+            <th class="px-3 py-2">Product Name</th>
+            <th class="px-3 py-2 text-center">Quantity</th>
+            <th class="px-3 py-2 text-right">Unit Price</th>
+            <th class="px-3 py-2 text-center">Discount (%)</th>
+            <th class="px-3 py-2 text-center">Tax (%)</th>
+            <th class="px-3 py-2 text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white dark:bg-gray-800" id="sales-entries-body">
+          <tr class="border-t dark:border-gray-600">
+            <td class="px-3 py-2 text-center">MTEI</td>
+            <td class="px-3 py-2 break-words">Paracetamol</td>
+            <td class="px-3 py-2 text-center">2</td>
+            <td class="px-3 py-2 text-right">$5</td>
+            <td class="px-3 py-2 text-center">10</td>
+            <td class="px-3 py-2 text-center">5</td>
+            <td class="px-3 py-2 text-center whitespace-nowrap space-x-2">
+              <button class="text-yellow-500 hover:underline" title="Edit">✏️</button>
+              <button class="text-red-600 hover:underline" title="Delete">🗑️</button>
+            </td>
+          </tr>
+          <tr class="border-t dark:border-gray-600">
+            <td class="px-3 py-2 text-center">MTEI</td>
+            <td class="px-3 py-2 break-words">Ibuprofen</td>
+            <td class="px-3 py-2 text-center">1</td>
+            <td class="px-3 py-2 text-right">$8</td>
+            <td class="px-3 py-2 text-center">0</td>
+            <td class="px-3 py-2 text-center">5</td>
+            <td class="px-3 py-2 text-center whitespace-nowrap space-x-2">
+              <button class="text-yellow-500 hover:underline" title="Edit">✏️</button>
+              <button class="text-red-600 hover:underline" title="Delete">🗑️</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <br><br>
+       <a href="{% url 'notifications' %}">
+            <button
+              class="flex items-center justify-between w-full px-4 py-2 text-sm font-medium leading-5 text-white transition-colors duration-150 bg-purple-600 border border-transparent rounded-lg active:bg-purple-600 hover:bg-purple-700 focus:outline-none focus:shadow-outline-purple"
+            >
+              Add  more sales entry
+              <span class="ml-2" aria-hidden="true">+</span>
+            </button>
+       </a>
+    </div><br><br>
+
+    <!-- Cart Table -->
+    <div class="overflow-x-auto bg-gray-100 dark:bg-gray-700 p-4 rounded-md">
+        <h3 class="text-md sm:text-lg font-semibold text-gray-800 dark:text-white mb-4">more sales info</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[600px] text-xs sm:text-sm text-left text-gray-800 dark:text-gray-100 border-collapse">
+          <thead class="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-100">
+            <tr>
+              <th class="px-3 py-2">pharmacy Name</th>
+              <th class="px-3 py-2">Product</th>
+              <th class="px-3 py-2 text-center">Quantity</th>
+              <th class="px-3 py-2 text-right">Price</th>
+              <th class="px-3 py-2 text-right">Subtotal</th>
+              <th class="px-3 py-2 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white dark:bg-gray-800"   id="sales-info-body">
+            <tr class="border-t dark:border-gray-600">
+              <td class="px-3 py-2 text-center">MTEI</td>
+              <td class="px-3 py-2 break-words">Paracetamol</td>
+              <td class="px-3 py-2 text-center">2</td>
+              <td class="px-3 py-2 text-right">$5</td>
+              <td class="px-3 py-2 text-right">$10</td>
+              <td class="px-3 py-2 text-center whitespace-nowrap space-x-2">
+                <button class="text-yellow-500 hover:underline" title="Edit">✏️</button>
+                <button class="text-red-600 hover:underline" title="Delete">🗑️</button>
+              </td>
+            </tr>
+            <tr class="border-t dark:border-gray-600">
+              <td class="px-3 py-2 text-center">MTEI</td>
+              <td class="px-3 py-2 break-words">Amoxicillin</td>
+              <td class="px-3 py-2 text-center">3</td>
+              <td class="px-3 py-2 text-right">$8</td>
+              <td class="px-3 py-2 text-right">$24</td>
+              <td class="px-3 py-2 text-center whitespace-nowrap space-x-2">
+                <button class="text-yellow-500 hover:underline" title="Edit">✏️</button>
+                <button class="text-red-600 hover:underline" title="Delete">🗑️</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+              <br><br>
+       <a href="{% url 'notifications' %}">
+                    <button
+              class="flex items-center justify-between w-full px-4 py-2 text-sm font-medium leading-5 text-white transition-colors duration-150 bg-purple-600 border border-transparent rounded-lg active:bg-purple-600 hover:bg-purple-700 focus:outline-none focus:shadow-outline-purple"
+            >
+              Add  more sales info
+              <span class="ml-2" aria-hidden="true">+</span>
+            </button>
+       </a>
+      </div>
+    </div><br><br>
+
+
+
+
+   
+
+    <!-- Sales Reports -->
+<div class="overflow-x-auto bg-gray-100 dark:bg-gray-700 p-4 rounded-md">
+  <div class="overflow-x-auto bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 text-center">📊 Sales Summary by Pharmacy</h3>
+<table class="w-full min-w-[700px] text-xs sm:text-sm text-left text-gray-800 dark:text-gray-100 border-collapse">
+  <thead class="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-100">
+    <tr>
+      <th class="px-3 py-2">Pharmacy Name</th>
+      <th class="px-3 py-2">Product Name</th>
+      <th class="px-3 py-2">Daily Sales</th>
+      <th class="px-3 py-2">Weekly Sales</th>
+      <th class="px-3 py-2">Monthly Sales</th>
+      <th class="px-3 py-2">Day</th>
+      <th class="px-3 py-2">Week</th>
+      <th class="px-3 py-2">Month</th>
+      <th class="px-3 py-2 text-center">Actions</th>
+    </tr>
+  </thead>
+  <tbody id="sales-table-body" class="bg-white dark:bg-gray-800">
+    <!-- Rows will be inserted by JavaScript -->
+  </tbody>
+</table>
+
+  </div><br><br>
+
+  <!-- Add More Sales Info Button -->
+  <div class="mt-6">
+    <a href="{% url 'notifications' %}">
+      <button
+        class="flex items-center justify-between w-full px-4 py-2 text-sm font-medium leading-5 text-white transition-colors duration-150 bg-purple-600 border border-transparent rounded-lg active:bg-purple-600 hover:bg-purple-700 focus:outline-none focus:shadow-outline-purple"
+      >
+        Add more sales info (Daily, Weekly, Monthly)
+        <span class="ml-2" aria-hidden="true">+</span>
+      </button>
+    </a>
+  </div>
+</div><br><br>
+
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  // Get CSRF token from cookie
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.startsWith(name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+  const csrftoken = getCookie('csrftoken');
+
+  // Fetch sales data and populate tables
+  async function fetchSales() {
+    try {
+      const res = await fetch('/api/sales/');
+      if (!res.ok) throw new Error('Failed to load sales data');
+      const data = await res.json();
+
+      const salesEntriesBody = document.getElementById('sales-entries-body');
+      const salesInfoBody = document.getElementById('sales-info-body');
+      salesEntriesBody.innerHTML = '';
+      salesInfoBody.innerHTML = '';
+
+      data.forEach(item => {
+        // Sales entries row
+        const rowEntry = document.createElement('tr');
+        rowEntry.className = 'border-t dark:border-gray-600';
+        rowEntry.innerHTML = `
+          <td class="px-3 py-2 text-center">${item.pharmacy_name}</td>
+          <td class="px-3 py-2 break-words">${item.product_name}</td>
+          <td class="px-3 py-2 text-center">${item.quantity}</td>
+          <td class="px-3 py-2 text-right">$${item.unit_price}</td>
+          <td class="px-3 py-2 text-center">${item.discount}</td>
+          <td class="px-3 py-2 text-center">${item.tax}</td>
+          <td class="px-3 py-2 text-center whitespace-nowrap space-x-2">
+            <button class="text-yellow-500 hover:underline btn-edit" data-id="${item.id}" title="Edit">✏️</button>
+            <button class="text-red-600 hover:underline btn-delete" data-id="${item.id}" title="Delete">🗑️</button>
+          </td>`;
+        salesEntriesBody.appendChild(rowEntry);
+
+        // Sales info row with subtotal calculation
+        const rawTotal = item.unit_price * item.quantity;
+        const discountAmount = Number(item.discount) || 0;
+        const taxAmount = Number(item.tax) || 0;
+        const subtotal = (rawTotal - (discountAmount + taxAmount)).toFixed(2);
+
+        const rowInfo = document.createElement('tr');
+        rowInfo.className = 'border-t dark:border-gray-600';
+        rowInfo.innerHTML = `
+          <td class="px-3 py-2 text-center">${item.pharmacy_name}</td>
+          <td class="px-3 py-2 break-words">${item.product_name}</td>
+          <td class="px-3 py-2 text-center">${item.quantity}</td>
+          <td class="px-3 py-2 text-right">$${item.unit_price}</td>
+          <td class="px-3 py-2 text-right">$${subtotal}</td>
+          <td class="px-3 py-2 text-center whitespace-nowrap space-x-2">
+            <button class="text-yellow-500 hover:underline btn-edit" data-id="${item.id}" title="Edit">✏️</button>
+            <button class="text-red-600 hover:underline btn-delete" data-id="${item.id}" title="Delete">🗑️</button>
+          </td>`;
+        salesInfoBody.appendChild(rowInfo);
+      });
+
+      setupButtons();
+    } catch (error) {
+      Swal.fire('Error', 'Could not load sales data.', 'error');
+      console.error(error);
+    }
+  }
+
+  // Edit sale entry
+async function handleEdit(id) {
+  try {
+    // Fetch current sale data
+    const res = await fetch(`/api/sales/${id}/`);
+    if (!res.ok) throw new Error('Failed to fetch sale data');
+    const sale = await res.json();
+
+    const { value: formValues, isConfirmed } = await Swal.fire({
+      title: 'Edit Sale Entry',
+      html:
+        `<label class="block text-left mb-1">Pharmacy Name:</label>` +
+        `<input id="swal-pharmacy" type="text" class="swal2-input" value="${sale.pharmacy_name || ''}">` +
+
+        `<label class="block text-left mb-1 mt-3">Product Name:</label>` +
+        `<input id="swal-product" type="text" class="swal2-input" value="${sale.product_name || ''}">` +
+
+        `<label class="block text-left mb-1 mt-3">Quantity:</label>` +
+        `<input id="swal-quantity" type="number" min="1" class="swal2-input" value="${sale.quantity}">` +
+
+        `<label class="block text-left mb-1 mt-3">Unit Price:</label>` +
+        `<input id="swal-unit-price" type="number" min="0" step="0.01" class="swal2-input" value="${sale.unit_price}">` +
+
+        `<label class="block text-left mb-1 mt-3">Discount:</label>` +
+        `<input id="swal-discount" type="number" min="0" step="0.01" class="swal2-input" value="${sale.discount || 0}">` +
+
+        `<label class="block text-left mb-1 mt-3">Tax:</label>` +
+        `<input id="swal-tax" type="number" min="0" step="0.01" class="swal2-input" value="${sale.tax || 0}">`,
+      focusConfirm: false,
+      showCancelButton: true,
+      preConfirm: () => {
+        const pharmacy = document.getElementById('swal-pharmacy').value.trim();
+        const product = document.getElementById('swal-product').value.trim();
+        const quantity = parseInt(document.getElementById('swal-quantity').value, 10);
+        const unitPrice = parseFloat(document.getElementById('swal-unit-price').value);
+        const discount = parseFloat(document.getElementById('swal-discount').value);
+        const tax = parseFloat(document.getElementById('swal-tax').value);
+
+        if (!pharmacy) {
+          Swal.showValidationMessage('Pharmacy Name cannot be empty');
+          return false;
+        }
+        if (!product) {
+          Swal.showValidationMessage('Product Name cannot be empty');
+          return false;
+        }
+        if (isNaN(quantity) || quantity < 1) {
+          Swal.showValidationMessage('Quantity must be a number 1 or greater');
+          return false;
+        }
+        if (isNaN(unitPrice) || unitPrice < 0) {
+          Swal.showValidationMessage('Unit Price must be 0 or greater');
+          return false;
+        }
+        if (isNaN(discount) || discount < 0) {
+          Swal.showValidationMessage('Discount must be 0 or greater');
+          return false;
+        }
+        if (isNaN(tax) || tax < 0) {
+          Swal.showValidationMessage('Tax must be 0 or greater');
+          return false;
+        }
+
+        return {
+          pharmacy_name: pharmacy,
+          product_name: product,
+          quantity,
+          unit_price: unitPrice,
+          discount,
+          tax
+        };
+      }
+    });
+
+    if (!isConfirmed) return;
+
+    // Prepare updated data with all fields except subtotal
+    const updatedSale = {
+      ...sale,
+      pharmacy_name: formValues.pharmacy_name,
+      product_name: formValues.product_name,
+      quantity: formValues.quantity,
+      unit_price: formValues.unit_price,
+      discount: formValues.discount,
+      tax: formValues.tax
+    };
+
+    // Send update request
+    const updateRes = await fetch(`/api/sales/${id}/`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrftoken
+      },
+      body: JSON.stringify(updatedSale),
+    });
+
+    if (!updateRes.ok) throw new Error('Update failed');
+
+    Swal.fire('Updated!', 'Sale entry updated successfully.', 'success');
+    fetchSales();
+  } catch (error) {
+    Swal.fire('Error', error.message || 'Failed to update sale entry.', 'error');
+    console.error(error);
+  }
+}
+
+  // Delete sale entry
+  async function handleDelete(id) {
+    const { isConfirmed } = await Swal.fire({
+      title: 'Are you sure?',
+      text: "This action cannot be undone!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!',
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      const res = await fetch(`/api/sales/${id}/`, {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': csrftoken },
+      });
+      if (!res.ok) throw new Error('Delete failed');
+      Swal.fire('Deleted!', 'Sale entry has been deleted.', 'success');
+      fetchSales();
+    } catch (error) {
+      Swal.fire('Error', 'Failed to delete sale entry.', 'error');
+      console.error(error);
+    }
+  }
+
+  // Setup event listeners for edit/delete buttons
+  function setupButtons() {
+    document.querySelectorAll('.btn-edit').forEach(btn =>
+      btn.addEventListener('click', () => handleEdit(btn.dataset.id))
+    );
+    document.querySelectorAll('.btn-delete').forEach(btn =>
+      btn.addEventListener('click', () => handleDelete(btn.dataset.id))
+    );
+  }
+
+  // Initialize
+  document.addEventListener('DOMContentLoaded', fetchSales);
+</script>
+
+
+<script>
+  // ✅ CSRF helper
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.startsWith(name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+  const srftoken = getCookie('csrftoken');
+
+  // ✅ Fetch and render sales data
+  async function fetchSales() {
+    try {
+      const res = await fetch('/api/sales/');
+      if (!res.ok) throw new Error('Failed to fetch sales data');
+      const data = await res.json();
+
+      const tbody = document.getElementById('sales-table-body');
+      tbody.innerHTML = '';
+
+      data.forEach(item => {
+        const row = document.createElement('tr');
+        row.className = 'border-b dark:border-gray-700';
+        row.innerHTML = `
+          <td class="px-3 py-2">${item.pharmacy_name}</td>
+          <td class="px-3 py-2">${item.product_name}</td>
+          <td class="px-3 py-2 text-right">$${Number(item.daily_sales).toFixed(2)}</td>
+          <td class="px-3 py-2 text-right">$${Number(item.weekly_sales).toFixed(2)}</td>
+          <td class="px-3 py-2 text-right">$${Number(item.monthly_sales).toFixed(2)}</td>
+          <td class="px-3 py-2 text-center">${item.day}</td>
+          <td class="px-3 py-2 text-center">${item.week}</td>
+          <td class="px-3 py-2 text-center">${item.month}</td>
+          <td class="px-3 py-2 text-center space-x-2">
+            <button class="btn-edit text-yellow-500 hover:underline" data-id="${item.id}" title="Edit">✏️</button>
+            <button class="btn-delete text-red-600 hover:underline" data-id="${item.id}" title="Delete">🗑️</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      setupButtons();
+    } catch (error) {
+      console.error(error);
+      Swal.fire('Error', 'Could not load sales data.', 'error');
+    }
+  }
+
+  // ✅ Set up edit/delete button handlers
+  function setupButtons() {
+    document.querySelectorAll('.btn-edit').forEach(btn =>
+      btn.addEventListener('click', () => handleEdit(btn.dataset.id))
+    );
+    document.querySelectorAll('.btn-delete').forEach(btn =>
+      btn.addEventListener('click', () => handleDelete(btn.dataset.id))
+    );
+  }
+
+  // ✅ Load on page ready
+  document.addEventListener('DOMContentLoaded', fetchSales);
+</script>
+
+
+
+{% endblock %}

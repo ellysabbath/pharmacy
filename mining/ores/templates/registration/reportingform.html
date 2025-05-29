@@ -1,0 +1,131 @@
+{% extends 'index.html' %}
+{% block title %}Add Medicine Inventory{% endblock %}
+
+{% block content %}
+<div class="w-full px-4 sm:px-6 lg:px-8 py-6 bg-white dark:bg-gray-900">
+  <div class="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 space-y-8">
+
+    <!-- Page Header -->
+    <h2 class="text-xl sm:text-3xl font-bold text-center text-gray-900 dark:text-white">
+      ➕ Add Medicine & Inventory Info
+    </h2>
+
+    <!-- Inventory Form -->
+    <form method="post" class="space-y-6" id="medicine-form">
+      {% csrf_token %}
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+     <!-- pharmacy name -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">pharmacy Name</label>
+          <input type="text" name="pharmacy_name" placeholder="e.g., Paracetamol" required
+            class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-purple-500 focus:border-purple-500">
+        </div>
+        <!-- Medicine Name -->
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Medicine Name</label>
+          <input type="text" name="medicine_name" placeholder="e.g., Paracetamol" required
+            class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-purple-500 focus:border-purple-500">
+        </div>
+
+        <!-- Stock -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Stock Quantity</label>
+          <input type="text" name="stock" min="0" required
+            class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-purple-500 focus:border-purple-500">
+        </div>
+
+        <!-- Expiry Date -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Expiry Date</label>
+          <input type="date" name="expiry_date" required
+            class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-purple-500 focus:border-purple-500">
+        </div>
+      </div>
+
+      <!-- Alert Status -->
+      <div class="w-full sm:w-1/2">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Alert Status</label>
+        <select name="alert_status" required
+          class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-purple-500 focus:border-purple-500">
+          <option value="" disabled selected>Select status</option>
+          <option value="Low Stock">🔴 Low Stock</option>
+          <option value="Near Expiry">⏳ Near Expiry</option>
+          <option value="OK">✅ OK</option>
+        </select>
+      </div><br><br>
+
+      <!-- Submit Button -->
+      <div class="pt-6 text-right">
+        <button type="submit"
+          class="inline-flex items-center px-6 py-2 text-sm font-medium leading-5 text-white bg-purple-600 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+          💾 Save Inventory
+        </button>
+      </div>
+    </form>
+
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("medicine-form");
+
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+      const formData = new FormData(form);
+      const data = {
+        pharmacy_name:formData.get("pharmacy_name"),
+        medicine_name: formData.get("medicine_name"),
+        stock: formData.get("stock"),
+        expiry_date: formData.get("expiry_date"),
+        alert_status: formData.get("alert_status")
+      };
+
+      try {
+        const response = await fetch("/api/medicines/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken
+          },
+          body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          Swal.fire({
+            icon: 'success',
+            title: 'Saved!',
+            text: 'Medicine inventory saved successfully.',
+            confirmButtonColor: '#6b46c1'
+          });
+          form.reset();
+        } else {
+          const errorData = await response.json();
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Something went wrong. Check input data.',
+            footer: JSON.stringify(errorData),
+            confirmButtonColor: '#e53e3e'
+          });
+        }
+      } catch (error) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Request Failed',
+          text: 'Could not connect to the server.',
+          confirmButtonColor: '#e53e3e'
+        });
+      }
+    });
+  });
+</script>
+
+{% endblock %}

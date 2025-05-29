@@ -1,0 +1,203 @@
+{% extends 'index.html' %}
+{% block title %}PHARMACY - User HOME{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+  <div class="text-center text-gray-900 dark:text-white mb-8">
+    <h2 class="text-3xl font-extrabold">📊 Pharmacy Sales Dashboard</h2>
+  </div>
+
+  <!-- Charts Container -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Chart 1 -->
+    <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow">
+      <h3 class="text-green-600 font-semibold mb-2">Weekly Sales by Pharmacy</h3>
+      <canvas id="weeklySalesByPharmacyChart" height="250"></canvas>
+    </div>
+
+    <!-- Chart 2 -->
+    <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow">
+      <h3 class="text-green-600 font-semibold mb-2">Monthly Sales by Product</h3>
+      <canvas id="monthlySalesByProductChart" height="250"></canvas>
+    </div>
+
+    <!-- Chart 3 -->
+    <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow">
+      <h3 class="text-green-600 font-semibold mb-2">Sales Distribution by Pharmacy</h3>
+      <canvas id="salesDistributionByPharmacyChart" height="250"></canvas>
+    </div>
+
+    <!-- Chart 4 -->
+    <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow">
+      <h3 class="text-green-600 font-semibold mb-2">Product Sales Comparison</h3>
+      <canvas id="productSalesComparisonChart" height="250"></canvas>
+    </div>
+
+    <!-- Chart 5 -->
+    <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow col-span-1 md:col-span-2">
+      <h3 class="text-green-600 font-semibold mb-2">Monthly Sales by Pharmacy and Product</h3>
+      <canvas id="monthlySalesByPharmacyProductChart" height="250"></canvas>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  async function fetchSalesData() {
+    try {
+      const response = await fetch('/api/sales/');
+      if (!response.ok) throw new Error('Failed to fetch sales data');
+      return await response.json();
+    } catch (error) {
+      console.error(error);
+      alert('Error loading sales data');
+      return [];
+    }
+  }
+
+  function aggregateSales(sales) {
+    const weeklySalesByPharmacy = {};
+    const monthlySalesByProduct = {};
+    const salesDistributionByPharmacy = {};
+    const productSalesComparison = {};
+    const monthlySalesByPharmacyProduct = {};
+
+    sales.forEach(item => {
+      const week = item.weekly_sales || 0;
+      const month = item.monthly_sales || 0;
+
+      // Weekly sales by pharmacy
+      weeklySalesByPharmacy[item.pharmacy_name] = (weeklySalesByPharmacy[item.pharmacy_name] || 0) + week;
+
+      // Monthly sales by product
+      monthlySalesByProduct[item.product_name] = (monthlySalesByProduct[item.product_name] || 0) + month;
+
+      // Sales distribution by pharmacy
+      salesDistributionByPharmacy[item.pharmacy_name] = (salesDistributionByPharmacy[item.pharmacy_name] || 0) + month;
+
+      // Product sales comparison
+      if (!productSalesComparison[item.product_name]) {
+        productSalesComparison[item.product_name] = { weekly: 0, monthly: 0 };
+      }
+      productSalesComparison[item.product_name].weekly += week;
+      productSalesComparison[item.product_name].monthly += month;
+
+      // Monthly sales by pharmacy and product
+      const comboKey = `${item.month}-${item.pharmacy_name}-${item.product_name}`;
+      monthlySalesByPharmacyProduct[comboKey] = (monthlySalesByPharmacyProduct[comboKey] || 0) + month;
+    });
+
+    return {
+      weeklySalesByPharmacy,
+      monthlySalesByProduct,
+      salesDistributionByPharmacy,
+      productSalesComparison,
+      monthlySalesByPharmacyProduct
+    };
+  }
+
+  function renderCharts(data) {
+    // Weekly Sales by Pharmacy
+    new Chart(document.getElementById('weeklySalesByPharmacyChart'), {
+      type: 'bar',
+      data: {
+        labels: Object.keys(data.weeklySalesByPharmacy),
+        datasets: [{
+          label: 'Weekly Sales',
+          data: Object.values(data.weeklySalesByPharmacy),
+          backgroundColor: 'rgba(75, 192, 192, 0.6)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+
+    // Monthly Sales by Product
+    new Chart(document.getElementById('monthlySalesByProductChart'), {
+      type: 'pie',
+      data: {
+        labels: Object.keys(data.monthlySalesByProduct),
+        datasets: [{
+          data: Object.values(data.monthlySalesByProduct),
+          backgroundColor: ['#EF4444', '#3B82F6', '#F59E0B', '#10B981', '#8B5CF6']
+        }]
+      },
+      options: { responsive: true }
+    });
+
+    // Sales Distribution by Pharmacy
+    new Chart(document.getElementById('salesDistributionByPharmacyChart'), {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(data.salesDistributionByPharmacy),
+        datasets: [{
+          data: Object.values(data.salesDistributionByPharmacy),
+          backgroundColor: ['#F87171', '#60A5FA', '#FBBF24', '#34D399', '#A78BFA']
+        }]
+      },
+      options: { responsive: true }
+    });
+
+    // Product Sales Comparison
+    const labels = Object.keys(data.productSalesComparison);
+    const weeklyData = labels.map(p => data.productSalesComparison[p].weekly);
+    const monthlyData = labels.map(p => data.productSalesComparison[p].monthly);
+
+    new Chart(document.getElementById('productSalesComparisonChart'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Weekly Sales',
+            data: weeklyData,
+            backgroundColor: 'rgba(34, 197, 94, 0.7)',
+            borderColor: 'rgba(34, 197, 94, 1)',
+            borderWidth: 1
+          },
+          {
+            label: 'Monthly Sales',
+            data: monthlyData,
+            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+            borderColor: 'rgba(59, 130, 246, 1)',
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true } },
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: { mode: 'index', intersect: false }
+        }
+      }
+    });
+
+    // Monthly Sales by Pharmacy and Product
+    new Chart(document.getElementById('monthlySalesByPharmacyProductChart'), {
+      type: 'bar',
+      data: {
+        labels: Object.keys(data.monthlySalesByPharmacyProduct),
+        datasets: [{
+          label: 'Monthly Sales',
+          data: Object.values(data.monthlySalesByPharmacyProduct),
+          backgroundColor: 'rgba(139, 92, 246, 0.6)',
+          borderColor: 'rgba(139, 92, 246, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    const sales = await fetchSalesData();
+    if (sales.length > 0) {
+      const aggregated = aggregateSales(sales);
+      renderCharts(aggregated);
+    }
+  });
+</script>
+{% endblock %}

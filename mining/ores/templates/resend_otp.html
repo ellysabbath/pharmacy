@@ -1,0 +1,171 @@
+{% load static %}  <!-- This will load the static files library -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resend OTP</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}"> <!-- Correct static link -->
+    <link rel="icon" href="../static/ootp/assets/img/vladimir-patkachakov-Mx6Xmf_nbRk-unsplash.jpg" type="image/jpg" />
+
+    <style>
+        /* General styling */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7fb;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 36px;
+            color: #4CAF50;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        p {
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        /* Form container */
+        form {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            margin-top: 20px;
+        }
+
+        label {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #4CAF50;
+            display: block;
+        }
+
+        input[type="email"] {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="email"]:focus {
+            border-color: #4CAF50;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            font-size: 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* Message styles */
+        .messages {
+            margin-top: 20px;
+        }
+
+        .message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            text-align: center;
+        }
+
+        .message.success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+
+        .message.warning {
+            background-color: #fcf8e3;
+            color: #8a6d3b;
+        }
+
+        .message.error {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+
+        /* Responsive design */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 28px;
+            }
+
+            p {
+                font-size: 16px;
+            }
+
+            form {
+                padding: 20px;
+                max-width: 100%;
+            }
+
+            button {
+                font-size: 16px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="form-container">
+    <h1>Resend OTP</h1>
+    <p>Enter your email address to receive a new OTP.</p>
+
+    <form method="POST">
+        {% csrf_token %}
+        <label for="otp_email">Email:</label>
+        <input type="email" id="otp_email" name="otp_email" required>
+        <button type="submit">Resend OTP</button>
+    </form>
+
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="message {{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+
+</body>
+</html>

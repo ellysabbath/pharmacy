@@ -1,0 +1,195 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Landing Page with Background</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="/static/assets/img/vladimir-patkachakov-Mx6Xmf_nbRk-unsplash.jpg" type="image/jpg" />
+
+    <style>
+      /* Optional: dark overlay over background image */
+      .bg-overlay {
+        background: linear-gradient(
+  rgba(0, 0, 0, 0.6),
+  rgba(0, 0, 0, 0.6)
+), url('/static/assets/img/vladimir-patkachakov-Mx6Xmf_nbRk-unsplash.jpg');
+;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+      }
+    </style>
+
+        <style>
+        .animate-marquee {
+          animation: marquee 5s linear infinite;
+        }
+
+        @keyframes marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-100%); }
+        }
+        /* Custom styling for the image wrapper */
+.image-wrapper {
+  width: 8rem; /* Set width of the image container */
+  height: 8rem; /* Set height of the image container */
+  border-radius: 50%; /* Make the image container round */
+  overflow: hidden; /* Ensures that the image does not overflow outside the container */
+
+  display: flex; /* Flex to align the image */
+  justify-content: center; /* Center the image horizontally */
+  align-items: center; /* Center the image vertically */
+}
+
+/* Custom styling for the image */
+.user-img {
+  object-fit: cover; /* Ensures the image covers the container while maintaining aspect ratio */
+  width: 100%; /* Ensure the image takes full width of the container */
+  height: 100%; /* Ensure the image takes full height of the container */
+}
+
+#image{
+  object-fit: cover; /* Ensures the image covers the container while maintaining aspect ratio */
+  width: 100%; /* Ensure the image takes full width of the container */
+  height: 100%;
+}
+
+#user-cards:hover {
+  animation-play-state: paused; /* Pause the animation on hover */
+}
+
+#user-cards {
+  animation-play-state: running; /* Keep the animation running by default */
+}
+
+      </style>
+  </head>
+  <body class="bg-overlay min-h-screen flex flex-col text-white">
+
+    <!-- Navbar -->
+    <header class="p-6">
+      <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <h1 class="text-2xl font-bold">TCIMS</h1></a>
+        <nav>
+          <ul class="flex gap-6 text-sm font-medium">
+            <li><a href="{% url 'signup' %}" class="hover:text-blue-300">sign up</a></li>
+            <li><a href="{% url 'signin' %}" class="hover:text-blue-300">sign in</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <main class="flex-grow flex items-center justify-center text-center px-4">
+      <div>
+        <!-- <h2 class="text-4xl md:text-5xl font-extrabold mb-4">Welcome to Our Product</h2> -->
+        <p class="text-lg md:text-xl mb-6 max-w-xl mx-auto text-gray-200">
+          join TUCASA CIVE freely by navigating at top-right link
+        </p>
+        <div class=" max-w-2xl mx-auto dark:bg-black-800 rounded-lg shadow-lg  transition-all duration-300">
+          <div :class="{'text-white': dark, 'text-black': !dark}" class="transition-colors duration-300" id="posts">
+          </div>
+          </div><br><br>
+
+        <script>
+          // Wait until DOM is ready
+          document.addEventListener('DOMContentLoaded', () => {
+            fetch('/api/posts/')
+              .then(response => response.json())
+              .then(data => {
+                const postsContainer = document.getElementById('posts');
+
+                data.forEach(post => {
+                  // Create a container for each post
+                  const postElement = document.createElement('div');
+
+
+                  // Add HTML content to it
+                  postElement.innerHTML = `
+                    <h2 :class="{'text-white': dark, 'text-black': !dark}">${post.title}</h2>
+                    <div :class="{'text-white': dark, 'text-black': !dark}">${post.text}</div>
+                  `;
+
+                  postsContainer.appendChild(postElement);
+                });
+              })
+              .catch(error => {
+                console.error('Error fetching posts:', error);
+                document.getElementById('posts').innerHTML = '<p class="text-red-500">Failed to load posts.</p>';
+              });
+          });
+        </script>
+        <a href="{% url 'signin' %}" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition">
+          proceed to sign in
+        </a>
+      </div>
+    </main>
+   <div>
+  <div id="users-container"
+       :class="{'text-white': dark, 'text-black': !dark}"
+       class="max-w-sm mx-auto bg-transparent dark:bg-transparent-800 rounded-lg shadow-lg p-6 transition-all duration-300">
+
+    <div class="transition-colors duration-300">
+      <div class="relative max-w-full mx-auto">
+        <div class="overflow-hidden">
+          <div class="flex animate-marquee" id="user-cards">
+            <!-- User cards will be injected here -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      function fetchUserData() {
+        fetch('/api/zone-history/')
+          .then(response => response.json())
+          .then(data => {
+            const userCardsContainer = document.getElementById('user-cards');
+            data.forEach(user => {
+              const userCard = createUserCard(user);
+              userCardsContainer.appendChild(userCard);
+            });
+          })
+          .catch(error => console.error('Error fetching user data:', error));
+      }
+
+      function createUserCard(user) {
+        const userCard = document.createElement('div');
+        userCard.classList.add('flex', 'flex-col', 'items-center', 'px-4', 'text-black', 'dark:text-white');
+
+        const imageWrapper = document.createElement('div');
+        imageWrapper.classList.add('w-32', 'h-32', 'rounded-full', 'overflow-hidden', 'flex', 'justify-center', 'items-center', 'bg-transparent');
+
+        const img = document.createElement('img');
+        img.src = user.image || 'https://randomuser.me/api/portraits/men/1.jpg';
+        img.alt = `${user.firstname} ${user.position}`;
+        img.classList.add('object-cover', 'w-full', 'h-full');
+
+        imageWrapper.appendChild(img);
+
+        const userName = document.createElement('p');
+        userName.classList.add('text-sm', 'mt-2', 'text-blue-500');
+        userName.textContent = `${user.firstname} - ${user.position}`;
+
+        userCard.appendChild(imageWrapper);
+        userCard.appendChild(userName);
+
+        return userCard;
+      }
+
+      fetchUserData();
+    });
+  </script>
+</div>
+
+    <!-- Footer -->
+    <footer class="text-center p-4 text-sm bg-black bg-opacity-40">
+      © 2025 TUCASA CIVE. Designed by Tesla Digest.
+    </footer>
+
+  </body>
+</html>

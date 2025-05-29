@@ -1,0 +1,297 @@
+{% extends 'index.html' %}
+
+{% block title %}Admin Register User{% endblock %}
+
+{% block content %}
+<div class="w-full px-4 sm:px-6 lg:px-8 py-6 bg-white dark:bg-gray-900">
+  <div class="max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 space-y-8 transition-all duration-300">
+
+    <!-- Header -->
+    <h2 class="text-2xl sm:text-3xl font-bold text-center text-green-900 dark:text-white">
+      🧾 Register User
+    </h2>
+
+    <!-- Add User Button -->
+    <div class="text-right">
+      <button id="add-user-btn" class="bg-indigo-600 hover:bg-indigo-700 text-green-500 font-bold py-2 px-4 rounded">
+        ➕ Add User
+      </button>
+    </div>
+
+    <!-- User Table -->
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[600px] text-xs sm:text-sm text-left text-gray-800 dark:text-gray-100 border-green-600">
+        <thead class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs">
+          <tr>
+            <th class="px-3 py-2 text-left">ID</th>
+            <th class="px-3 py-2 text-left">Username</th>
+            <th class="px-3 py-2 text-left">Email</th>
+            <th class="px-3 py-2 text-left">Mobile</th>
+            <th class="px-3 py-2 text-left">Role</th>
+            <th class="px-3 py-2 text-left">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="users-body" class="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+          <!-- JS will insert rows here -->
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+  // Cookie helpers
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  function setCookie(name, value, days) {
+    const expires = new Date(Date.now() + days * 864e5).toUTCString();
+    document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/';
+  }
+
+  function deleteCookie(name) {
+    setCookie(name, '', -1);
+  }
+
+  const csrftoken = getCookie('csrftoken');
+
+  // Escape HTML to prevent XSS in template literals
+  function escapeHtml(text) {
+    if (!text) return '';
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  // Fetch users and populate table
+  async function fetchUsers() {
+    try {
+      const res = await fetch('/users/');
+      if (!res.ok) throw new Error('Failed to fetch users');
+      const data = await res.json();
+
+      const tbody = document.getElementById('users-body');
+      tbody.innerHTML = '';
+
+      data.forEach(user => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="px-4 py-2 text-green-500">${user.id}</td>
+          <td class="px-4 py-2 text-green-500">${escapeHtml(user.username)}</td>
+          <td class="px-4 py-2 text-green-500">${escapeHtml(user.email)}</td>
+          <td class="px-4 py-2 text-green-500">${escapeHtml(user.mobile_number)}</td>
+          <td class="px-4 py-2 text-green-500">${escapeHtml(user.role)}</td>
+          <td class="px-4 py-2">
+            <button class="btn-edit text-green-500 hover:underline" data-id="${user.id}">✏️ Edit</button>
+            <button class="btn-delete text-red-600 hover:underline" data-id="${user.id}">🗑️ Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      setupUserButtons();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Setup edit and delete buttons
+  function setupUserButtons() {
+    document.querySelectorAll('.btn-edit').forEach(btn =>
+      btn.addEventListener('click', () => handleUserEdit(btn.dataset.id))
+    );
+    document.querySelectorAll('.btn-delete').forEach(btn =>
+      btn.addEventListener('click', () => handleUserDelete(btn.dataset.id))
+    );
+  }
+
+  // Add new user
+  async function handleUserAdd() {
+    const { value: formValues, isConfirmed } = await Swal.fire({
+      title: 'Add New User',
+html: `
+  <input id="swal-username" class="swal2-input" placeholder="Username" required>
+  <input id="swal-email" type="email" class="swal2-input" placeholder="Email" required>
+  <input id="swal-mobile" type="tel" class="swal2-input" placeholder="Mobile Number" required>
+  <select id="swal-role" class="swal2-input" required>
+    <option value="" disabled selected>Select Role</option>
+    <option value="admin">Admin</option>
+    <option value="normal">Normal</option>
+  </select>
+`
+,
+      showCancelButton: true,
+      preConfirm: () => {
+        const username = document.getElementById('swal-username').value.trim();
+        const email = document.getElementById('swal-email').value.trim();
+        const mobile_number = document.getElementById('swal-mobile').value.trim();
+        const role = document.getElementById('swal-role').value;
+
+        if (!username || !email || !mobile_number) {
+          Swal.showValidationMessage('Please enter username, email, and mobile number');
+          return false;
+        }
+
+        return { username, email, mobile_number,role };
+      }
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      const res = await fetch('/users/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(formValues)
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to create user');
+      }
+
+      setCookie('userAction', 'created', 1);
+
+      Swal.fire('Created!', 'User added successfully.', 'success');
+      fetchUsers();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Edit user
+  async function handleUserEdit(id) {
+    try {
+      const res = await fetch(`/users/${id}/`);
+      if (!res.ok) throw new Error('Failed to fetch user');
+      const user = await res.json();
+
+      const { value: formValues, isConfirmed } = await Swal.fire({
+        title: 'Edit User',
+html: `
+  <input id="swal-username" class="swal2-input" value="${escapeHtml(user.username)}" placeholder="Username" required>
+  <input id="swal-email" type="email" class="swal2-input" value="${escapeHtml(user.email)}" placeholder="Email" required>
+  <input id="swal-mobile" type="tel" class="swal2-input" value="${escapeHtml(user.mobile_number)}" placeholder="Mobile Number" required>
+  <select id="swal-role" class="swal2-input" required>
+    <option value="" disabled ${!user.role ? 'selected' : ''}>Select Role</option>
+    <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+    <option value="normal" ${user.role === 'normal' ? 'selected' : ''}>Normal</option>
+  </select>
+`
+,
+        showCancelButton: true,
+        preConfirm: () => {
+          const username = document.getElementById('swal-username').value.trim();
+          const email = document.getElementById('swal-email').value.trim();
+          const mobile_number = document.getElementById('swal-mobile').value.trim();
+          const role = document.getElementById('swal-role').value.trim();
+
+          if (!username || !email || !mobile_number || !role) {
+            Swal.showValidationMessage('Please enter username, email,  mobile number, and role');
+            return false;
+          }
+
+          return { username, email, mobile_number, role };
+        }
+      });
+
+      if (!isConfirmed) return;
+
+      const updateRes = await fetch(`/users/${id}/`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(formValues)
+      });
+
+      if (!updateRes.ok) {
+        const errorData = await updateRes.json();
+        throw new Error(errorData.message || 'Update failed');
+      }
+
+      setCookie('userAction', 'updated', 1);
+
+      Swal.fire('Updated!', 'User updated successfully.', 'success');
+      fetchUsers();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Delete user
+  async function handleUserDelete(id) {
+    const { isConfirmed } = await Swal.fire({
+      title: 'Are you sure?',
+      text: 'This will permanently delete the user.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      const res = await fetch(`/users/${id}/`, {
+        method: 'DELETE',
+        headers: {
+          'X-CSRFToken': csrftoken
+        }
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Delete failed');
+      }
+      setCookie('userAction', 'deleted', 1);
+
+      Swal.fire('Deleted!', 'User deleted successfully.', 'success');
+      fetchUsers();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // On page load, check for cookie and show message
+  document.addEventListener('DOMContentLoaded', () => {
+    const action = getCookie('userAction');
+    if (action) {
+      let msg = '';
+      if (action === 'created') msg = 'User was created successfully!';
+      else if (action === 'updated') msg = 'User was updated successfully!';
+      else if (action === 'deleted') msg = 'User was deleted successfully!';
+
+      if (msg) {
+        Swal.fire('Success', msg, 'success');
+      }
+      deleteCookie('userAction');
+    }
+
+    fetchUsers();
+    document.getElementById('add-user-btn').addEventListener('click', handleUserAdd);
+  });
+</script>
+
+{% endblock %}

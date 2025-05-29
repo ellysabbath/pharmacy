@@ -1,0 +1,78 @@
+{% extends 'index.html' %}
+{% block title %}Add Inventory Notifications{% endblock %}
+
+{% block content %}
+<div class="w-full px-4 sm:px-6 lg:px-8 py-6 bg-white dark:bg-gray-900">
+  <div class="max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 space-y-10 transition-all duration-300">
+
+    <!-- Header -->
+    <h2 class="text-2xl sm:text-3xl font-bold text-center text-gray-900 dark:text-white">
+      ➕ Add Notification Entries
+    </h2>
+
+    <!-- Low Stock Alert Form -->
+     <div class="w-full px-4 sm:px-6 lg:px-8 py-6 bg-white dark:bg-gray-900">
+     <div class="max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 space-y-10 transition-all duration-300">
+        <section class="bg-gray-100 dark:bg-gray-700 p-6 rounded-md">
+      <h3 class="block text-sm font-medium text-gray-700 dark:text-gray-200">🔴 Add Low Stock Alert</h3>
+      <form method="post" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        {% csrf_token %}
+        <input type="text" name="medicine_name" placeholder="Medicine Name" required class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+        <input type="number" name="remaining_units" min="1" placeholder="Remaining Units" required class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+        <div class="col-span-full text-right">
+          <button type="submit" class="inline-flex items-center px-6 py-2 text-sm font-medium leading-5 text-white bg-purple-600 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500">💾 Save Alert</button>
+        </div>
+      </form>
+        </section>
+     </div>
+  </div>
+     <br><br>
+
+    <!-- Expiry Alert Form -->
+     <div class="w-full px-4 sm:px-6 lg:px-8 py-6 bg-white dark:bg-gray-900">
+     <div class="max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 space-y-10 transition-all duration-300">
+        <section class="bg-gray-100 dark:bg-gray-700 p-6 rounded-md">
+      <h3 class="block text-sm font-medium text-gray-700 dark:text-gray-200">⏰ Add Expiry Alert</h3>
+      <form method="post" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        {% csrf_token %}
+        <input type="text" name="medicine_name" placeholder="Medicine Name" required class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+        <input type="number" name="expiry_days" min="1" placeholder="Days Until Expiry" required class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+        <div class="col-span-full text-right">
+          <button type="submit" class="inline-flex items-center px-6 py-2 text-sm font-medium leading-5 text-white bg-purple-600 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500">💾 Save Alert</button>
+        </div>
+      </form>
+        </section>
+     </div>
+</div>
+     <br><br>
+
+    <!-- Pending Order Alert Form -->
+     <div class="w-full px-4 sm:px-6 lg:px-8 py-6 bg-white dark:bg-gray-900">
+     <div class="max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 space-y-10 transition-all duration-300">
+        <section class="bg-gray-100 dark:bg-gray-700 p-6 rounded-md">
+      <h3 class="block text-sm font-medium text-gray-700 dark:text-gray-200">📦 Add Pending Order</h3>
+      <form method="post" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+        {% csrf_token %}
+        <input type="text" name="order_id" placeholder="Order ID" required class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+        <input type="text" name="supplier" placeholder="Supplier Name" required class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+        <select name="status" required class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+          <option disabled selected>Status</option>
+          <option value="Pending Delivery">Pending Delivery</option>
+          <option value="Awaiting Confirmation">Awaiting Confirmation</option>
+          <option value="On Hold">On Hold</option>
+        </select><br><br>
+        <div class="col-span-full text-right">
+          <button type="submit" class="inline-flex items-center px-6 py-2 text-sm font-medium leading-5 text-white bg-purple-600 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+            💾 Save Order</button>
+        </div>
+      </form>
+        </section>
+    </div>
+     </div>
+  </div>
+  
+</div>
+
+<!-- Tailwind CSS Utility Classes -->
+
+{% endblock %}

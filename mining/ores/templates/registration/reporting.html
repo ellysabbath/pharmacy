@@ -1,0 +1,212 @@
+{% extends 'index.html' %}
+{% block title %}Medicine Inventory Management{% endblock %}
+
+{% block content %}
+<div class="w-full px-2 sm:px-6 lg:px-8 py-6 bg-white dark:bg-gray-900">
+  <div class="max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6 transition-all duration-300">
+    <h2 class="text-xl sm:text-3xl font-bold text-center text-gray-900 dark:text-white mb-6">
+      💊 Medicine & Inventory Management
+    </h2>
+
+    <div class="overflow-x-auto rounded-md">
+      <table class="w-full min-w-[600px] table-auto text-xs sm:text-sm text-left text-gray-800 dark:text-gray-100 border-collapse">
+        <thead class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+          <tr>
+            <th class="px-3 py-2">Pharmacy Name</th>
+            <th class="px-3 py-2">Medicine</th>
+            <th class="px-3 py-2 text-center">Stock</th>
+            <th class="px-3 py-2 text-center">Expiry Date</th>
+            <th class="px-3 py-2 text-center">Alert Status</th>
+            <th class="px-3 py-2 text-center">Action</th>
+          </tr>
+        </thead>
+        <tbody id="medicine-table-body" class="bg-white dark:bg-gray-800">
+          <!-- Content injected by JavaScript -->
+        </tbody>
+      </table>
+
+      <br><br>
+      <a href="{% url 'reporting' %}">
+        <button
+          class="flex items-center justify-between w-full px-4 py-2 text-sm font-medium leading-5 text-white transition-colors duration-150 bg-purple-600 border border-transparent rounded-lg active:bg-purple-600 hover:bg-purple-700 focus:outline-none focus:shadow-outline-purple">
+          Add more medicine and inventory
+          <span class="ml-2" aria-hidden="true">+</span>
+        </button>
+      </a>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+  // Get CSRF token from cookie
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.startsWith(name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  // Format alert status with colors and icons
+  function formatAlertStatus(status) {
+    switch (status) {
+      case 'Low Stock': return '<span class="text-red-600 dark:text-red-400">🔴 Low Stock</span>';
+      case 'Near Expiry': return '<span class="text-yellow-600 dark:text-yellow-300">⏳ Near Expiry</span>';
+      case 'OK': return '<span class="text-green-600 dark:text-green-400">✅ OK</span>';
+      default: return status;
+    }
+  }
+
+  // Fetch medicine data and populate table
+  async function fetchMedicineData() {
+    try {
+      const res = await fetch('/api/medicines/');
+      const data = await res.json();
+      const tbody = document.getElementById('medicine-table-body');
+      tbody.innerHTML = '';
+      data.forEach(medicine => {
+        const row = document.createElement('tr');
+        row.id = `inventory-row-${medicine.id}`;
+        row.className = 'border-t dark:border-gray-600 dark:hover:bg-gray-700 transition';
+        row.innerHTML = `
+          <td class="px-3 py-2 break-words">${medicine.pharmacy_name || '-'}</td>
+          <td class="px-3 py-2 break-words">${medicine.medicine_name}</td>
+          <td class="px-3 py-2 text-center">${medicine.stock}</td>
+          <td class="px-3 py-2 text-center">${medicine.expiry_date}</td>
+          <td class="px-3 py-2 text-center font-semibold">${formatAlertStatus(medicine.alert_status)}</td>
+          <td class="px-3 py-2 text-center whitespace-nowrap">
+            <button class="text-yellow-500 hover:underline btn-edit" data-id="${medicine.id}" title="Edit">✏️</button>
+            <button class="text-red-600 hover:underline btn-delete" data-id="${medicine.id}" title="Delete">🗑️</button>
+          </td>`;
+        tbody.appendChild(row);
+      });
+      setupButtons();
+    } catch (error) {
+      Swal.fire('Error', 'Could not load medicine data.', 'error');
+    }
+  }
+
+  // Delete medicine entry by id
+  async function deleteInventory(id) {
+    try {
+      const res = await fetch(`/api/medicines/${id}/`, {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') }
+      });
+      if (res.ok) {
+        document.getElementById(`inventory-row-${id}`).remove();
+        Swal.fire('Deleted!', 'The medicine has been deleted.', 'success');
+      } else {
+        Swal.fire('Error', 'Failed to delete. Try again.', 'error');
+      }
+    } catch {
+      Swal.fire('Error', 'Something went wrong!', 'error');
+    }
+  }
+
+  // Handle edit button click: show edit modal and update data
+ async function handleEdit(id) {
+  try {
+    const res = await fetch(`/api/medicines/${id}/`);
+    if (!res.ok) throw new Error('Failed to fetch medicine data');
+    const medicine = await res.json();
+
+    const alertStatusOptions = `
+      <option value="" disabled>Select status</option>
+      <option value="Low Stock" ${medicine.alert_status === 'Low Stock' ? 'selected' : ''}>🔴 Low Stock</option>
+      <option value="Near Expiry" ${medicine.alert_status === 'Near Expiry' ? 'selected' : ''}>⏳ Near Expiry</option>
+      <option value="OK" ${medicine.alert_status === 'OK' ? 'selected' : ''}>✅ OK</option>
+    `;
+
+    const { value: formValues, isConfirmed } = await Swal.fire({
+      title: 'Edit Medicine',
+      html:
+        `<label class="block text-left mb-1">Stock:</label>` +
+        `<input id="swal-input1" type="number" min="0" class="swal2-input" value="${medicine.stock}">` +
+        `<label class="block text-left mt-3 mb-1">Expiry Date:</label>` +
+        `<input id="swal-input2" type="date" class="swal2-input" value="${medicine.expiry_date}">` +
+        `<label class="block text-left mt-3 mb-1">Pharmacy Name:</label>` +
+        `<input id="swal-input3" type="text" class="swal2-input" value="${medicine.pharmacy_name || ''}">` +
+        `<label class="block text-left mt-3 mb-1">Medicine Name:</label>` +
+        `<input id="swal-input4" type="text" class="swal2-input" value="${medicine.medicine_name || ''}">` +
+        `<label class="block text-left mt-3 mb-1">Alert Status:</label>` +
+        `<select id="swal-input5" name="alert_status" required class="swal2-input">
+          ${alertStatusOptions}
+        </select>`,
+      focusConfirm: false,
+      showCancelButton: true,
+      preConfirm: () => {
+        const stock = document.getElementById('swal-input1').value;
+        const expiry_date = document.getElementById('swal-input2').value;
+        const pharmacy_name = document.getElementById('swal-input3').value.trim();
+        const medicine_name = document.getElementById('swal-input4').value.trim();
+        const alert_status = document.getElementById('swal-input5').value;
+
+        if (!stock || stock < 0) {
+          Swal.showValidationMessage('Please enter a valid stock number');
+          return false;
+        }
+        if (!expiry_date) {
+          Swal.showValidationMessage('Please enter a valid expiry date');
+          return false;
+        }
+        if (!alert_status) {
+          Swal.showValidationMessage('Please select an alert status');
+          return false;
+        }
+        return { stock, expiry_date, pharmacy_name, medicine_name, alert_status };
+      }
+    });
+
+    if (isConfirmed) {
+      const updatedData = {
+        ...medicine,
+        stock: Number(formValues.stock),
+        expiry_date: formValues.expiry_date,
+        pharmacy_name: formValues.pharmacy_name,
+        medicine_name: formValues.medicine_name,
+        alert_status: formValues.alert_status
+      };
+
+      const updateRes = await fetch(`/api/medicines/${id}/`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(updatedData)
+      });
+
+      if (!updateRes.ok) throw new Error('Update failed');
+
+      Swal.fire('Updated!', 'Medicine data has been updated.', 'success');
+      fetchMedicineData();
+    }
+  } catch (error) {
+    Swal.fire('Error', error.message || 'Failed to update medicine.', 'error');
+  }
+}
+
+  // Setup event listeners on edit and delete buttons
+  function setupButtons() {
+    document.querySelectorAll('.btn-edit').forEach(btn =>
+      btn.addEventListener('click', () => handleEdit(btn.dataset.id))
+    );
+    document.querySelectorAll('.btn-delete').forEach(btn =>
+      btn.addEventListener('click', () => deleteInventory(btn.dataset.id))
+    );
+  }
+
+  // Load data on page ready
+  document.addEventListener('DOMContentLoaded', fetchMedicineData);
+</script>
+
+{% endblock %}

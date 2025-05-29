@@ -1,0 +1,181 @@
+{% extends 'index.html' %}
+{% block title %}Add Supplier & Purchase Data{% endblock %}
+
+{% block content %}
+<div class="w-full px-4 sm:px-6 lg:px-8 py-6 bg-white dark:bg-gray-900">
+  <div class="max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 space-y-12 transition-all duration-300">
+
+    <!-- Header -->
+    <h2 class="text-2xl sm:text-3xl font-bold text-center text-gray-900 dark:text-green-400">
+      ➕ Add Supplier & Procurement Information
+    </h2>
+
+    <!-- Supplier Form -->
+    <section class="bg-gray-100 dark:bg-gray-700 p-6 rounded-md">
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">🏪 Add Supplier</h3>
+      <form method="post" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+        {% csrf_token %}
+        <input type="text" name="supplier_name" placeholder="Supplier Name" required
+          class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+        <input type="email" name="email" placeholder="Email Address" required
+          class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+        <input type="tel" name="phone" placeholder="Phone Number" required
+          class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+        <input type="text" name="company_name" placeholder="Company / Brand Name" required
+          class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+        <div class="col-span-full text-right">
+          <button type="submit"
+             class="inline-flex items-center px-6 py-2 text-sm font-medium leading-5 text-white bg-purple-600 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+             💾 Save Supplier</button>
+        </div>
+      </form>
+    </section><br><br>
+
+    <!-- Purchase Orders Form -->
+    <section class="bg-gray-100 dark:bg-gray-700 p-6 rounded-md">
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">📦 Add Purchase Order</h3>
+      <form method="post" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-6">
+        {% csrf_token %}
+        <input type="text" name="supplier_name" placeholder="Supplier" required
+          class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+
+        <select name="status" required class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+          <option value="" disabled selected>Status</option>
+          <option value="Received">Received</option>
+          <option value="Pending">Pending</option>
+        </select>
+        <div class="col-span-full text-right">
+          <button type="submit"  
+            class="inline-flex items-center px-6 py-2 text-sm font-medium leading-5 text-white bg-purple-600 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+            💾 Save Order</button>
+        </div>
+      </form>
+    </section><br><br>
+
+    <!-- Incoming Stock Form -->
+    <section class="bg-gray-100 dark:bg-gray-700 p-6 rounded-md">
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">🚚 Add Incoming Stock</h3>
+      <form method="post" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-6">
+        {% csrf_token %}
+        <input type="text" name="medicine" placeholder="Medicine" required
+          class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+        <input type="number" name="quantity" min="1" placeholder="Quantity" required
+          class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+        <input type="date" name="expected_date" required
+          class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+        <input type="text" name="supplier_name" placeholder="Supplier" required
+          class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+        <div class="col-span-full text-right">
+          <button type="submit"  
+            class="inline-flex items-center px-6 py-2 text-sm font-medium leading-5 text-white bg-purple-600 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+            💾 Save Stock Entry</button>
+        </div>
+      </form>
+    </section>
+
+  </div>
+</div>
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+  // 🔐 Get CSRF token from cookie
+  function getCSRFToken() {
+    const name = 'csrftoken';
+    const cookieValue = document.cookie
+      .split('; ')
+      .find(row => row.startsWith(name + '='))
+      ?.split('=')[1];
+    return cookieValue;
+  }
+
+  // ✅ Generic form submitter with safe JSON parsing
+  async function submitForm(endpoint, data, formElement) {
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCSRFToken(),
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        // Parse JSON only if content-type includes json
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          await response.json(); // optionally handle response data
+        }
+
+        await Swal.fire({
+          icon: 'success',
+          title: 'Success!',
+          text: 'Data saved successfully!',
+          timer: 2000,
+          showConfirmButton: false
+        });
+        formElement.reset();
+      } else {
+        let errorData = null;
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          errorData = await response.json();
+        }
+        console.error('Server responded with errors:', errorData);
+        Swal.fire({
+          icon: 'error',
+          title: 'Validation Error!',
+          text: 'Please check your input and try again.'
+        });
+      }
+    } catch (err) {
+      console.error('Network error:', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Network Error!',
+        text: 'Could not connect to server.'
+      });
+    }
+  }
+
+  // 🏪 Supplier Form Submission
+  document.querySelectorAll('form')[0]?.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const form = e.target;
+    const data = {
+      supplier_name: form.supplier_name.value,
+      email: form.email.value,
+      phone: form.phone.value,
+      company_name: form.company_name.value
+    };
+    submitForm('/api/suppliers/', data, form);
+  });
+
+  // 📦 Purchase Order Form Submission
+  document.querySelectorAll('form')[1]?.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const form = e.target;
+    const data = {
+      supplier_name: form.supplier_name.value,
+      status: form.status.value
+    };
+    submitForm('/api/purchase-orders/', data, form);
+  });
+
+  // 🚚 Incoming Stock Form Submission
+  document.querySelectorAll('form')[2]?.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const form = e.target;
+    const data = {
+      medicine: form.medicine.value,
+      quantity: parseInt(form.quantity.value),
+      expected_date: form.expected_date.value,
+      supplier_name: form.supplier_name.value
+    };
+    submitForm('/api/incoming-stock/', data, form);
+  });
+</script>
+
+{% endblock %}

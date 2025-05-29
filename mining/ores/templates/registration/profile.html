@@ -1,0 +1,15 @@
+{% extends 'index.html' %}
+
+{% block title %}PHARMACY| user profile{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 transition-all duration-300">
+    <div :class="{'text-white': dark, 'text-black': !dark}" class="transition-colors duration-300">
+      <h4 class="text-green-500">MY PROFILE</h4>
+      <p class="text-green-500">
+
+        {{user.username}}
+      </p>
+    </div>
+</div>
+{% endblock %}

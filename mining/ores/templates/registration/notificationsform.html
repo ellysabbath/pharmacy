@@ -1,0 +1,145 @@
+{% extends 'index.html' %}
+{% block title %}Add Sales & Billing Info{% endblock %}
+
+{% block content %}
+<div class="w-full px-4 sm:px-6 lg:px-8 py-6 bg-white dark:bg-gray-900">
+  <div class="max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 space-y-8">
+
+    <!-- 🛒 Sales Entry Form -->
+    <form method="post" class="space-y-6" id="sales-entry-form">
+      {% csrf_token %}
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white">🛒 Sales Entry</h3>
+
+      <div class="mt-8 grid grid-cols-3 gap-6">
+        <div>
+          <label class="block text-sm text-gray-700 dark:text-gray-200">Pharmacy Name</label>
+          <input type="text" name="pharmacy_name"
+            class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+            required>
+        </div>
+        <div>
+          <label class="block text-sm text-gray-700 dark:text-gray-200">Product Name</label>
+          <input type="text" name="product_name"
+            class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+            required>
+        </div>
+        <div>
+          <label class="block text-sm text-gray-700 dark:text-gray-200">Quantity</label>
+          <input type="number" name="quantity" min="1"
+            class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+            required>
+        </div>
+        <div>
+          <label class="block text-sm text-gray-700 dark:text-gray-200">Unit Price ($)</label>
+          <input type="number" step="0.01" name="unit_price" min="0"
+            class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+            required>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-6 mt-6">
+        <div>
+          <label class="block text-sm text-gray-700 dark:text-gray-200">Discount ($)</label>
+          <input type="number" step="0.01" name="discount" min="0" value="0"
+            class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+        </div>
+        <div>
+          <label class="block text-sm text-gray-700 dark:text-gray-200">Tax ($)</label>
+          <input type="number" step="0.01" name="tax" min="0" value="0"
+            class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+        </div>
+        <div>
+          <label class="block text-sm text-gray-700 dark:text-gray-200">Date</label>
+          <input type="date" name="date"
+            class="w-full px-4 py-2 mt-1 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+            value="{{ today|default:None }}" max="{{ today|default:None }}">
+        </div>
+      </div><br><br>
+
+      <div class="pt-6 text-right align-middle">
+        <button type="submit"
+          class="inline-flex items-center px-6 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+          💾 Save Sales Entry
+        </button>
+      </div>
+    </form>
+  </div><br><br>
+</div>
+
+<div>
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    // Get CSRF token from cookie
+    function getCSRFToken() {
+      const name = 'csrftoken';
+      const cookieValue = document.cookie.split('; ')
+        .find(row => row.startsWith(name + '='))
+        ?.split('=')[1];
+      return cookieValue;
+    }
+
+    // Submit data and show alert with form reset
+    async function submitForm(endpoint, data) {
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken(),
+          },
+          body: JSON.stringify(data),
+        });
+
+        if (response.ok) {
+          await Swal.fire({
+            icon: 'success',
+            title: 'Success!',
+            text: 'Data saved successfully.',
+            timer: 2000,
+            showConfirmButton: false
+          });
+          return true;
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error!',
+            text: 'Something went wrong.',
+          });
+          return false;
+        }
+      } catch (error) {
+        console.error('Fetch error:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error!',
+          text: 'Network or server error.',
+        });
+        return false;
+      }
+    }
+
+    // Handle Sales Entry Form Submission
+    document.getElementById('sales-entry-form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const form = e.target;
+
+      const data = {
+        pharmacy_name: form.pharmacy_name.value,
+        product_name: form.product_name.value,
+        quantity: parseInt(form.quantity.value),
+        unit_price: parseFloat(form.unit_price.value),
+        discount: parseFloat(form.discount.value || 0), // absolute value in dollars
+        tax: parseFloat(form.tax.value || 0),           // absolute value in dollars
+        date: form.date.value || new Date().toISOString().split('T')[0], // fallback today
+      };
+
+      const success = await submitForm('/api/sales/', data);
+      if (success) {
+        form.reset();
+      }
+    });
+  </script>
+</div>
+{% endblock %}

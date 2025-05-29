@@ -1,0 +1,384 @@
+{% extends 'index.html' %}
+{% block title %}Mining Total Quantity Sent{% endblock %}
+
+{% block content %}
+<div class="w-full px-2 sm:px-6 lg:px-8 py-6 bg-white dark:bg-gray-900">
+  <div class="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6 space-y-8">
+
+    <!-- Page Header -->
+    <h2 class="text-xl sm:text-3xl font-bold text-center text-gray-900 dark:text-white">
+      👤 Customer Management
+    </h2>
+
+    <!-- Customer Record Table -->
+
+
+
+
+<div class="bg-gray-100 dark:bg-gray-700 p-4 sm:p-6 rounded-md space-y-4">
+  <h3 class="text-md sm:text-lg font-semibold text-gray-800 dark:text-white">Customer Records</h3>
+
+  <div class="overflow-x-auto rounded-md">
+    <table class="w-full min-w-[600px] text-xs sm:text-sm text-left text-gray-800 dark:text-gray-100 border-collapse">
+      <thead class="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-100">
+        <tr>
+          <th class="px-3 py-2 border">Full Name</th>
+          <th class="px-3 py-2 border">Age</th>
+          <th class="px-3 py-2 border">Contact</th>
+          <th class="px-3 py-2 border">Email</th>
+          <th class="px-3 py-2 border">Pharmacy Name</th>
+          <th class="px-3 py-2 border">Action</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" id="customer-entries-body">
+        <!-- Customer rows will be inserted here -->
+      </tbody>
+    </table>
+
+    <br><br>
+    <a href="{% url 'customer' %}">
+      <button class="flex items-center justify-between w-full px-4 py-2 text-sm font-medium leading-5 text-white bg-purple-600 border border-transparent rounded-lg hover:bg-purple-700">
+        Add Customer
+        <span class="ml-2">+</span>
+      </button>
+    </a>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  const csrftoken = document.cookie.split('; ')
+    .find(row => row.startsWith('csrftoken='))
+    ?.split('=')[1];
+
+  async function fetchCustomers() {
+    try {
+      const res = await fetch('/api/customers/');
+      if (!res.ok) throw new Error('Failed to load customer data');
+
+      const data = await res.json();
+      const tbody = document.getElementById('customer-entries-body');
+      tbody.innerHTML = '';
+
+      data.forEach(item => {
+        const row = document.createElement('tr');
+        row.className = 'border-t dark:border-gray-600';
+        row.innerHTML = `
+          <td class="px-3 py-2 border">${item.full_name}</td>
+          <td class="px-3 py-2 border text-center">${item.age}</td>
+          <td class="px-3 py-2 border">${item.contact}</td>
+          <td class="px-3 py-2 border">${item.email}</td>
+          <td class="px-3 py-2 border">${item.pharmacy_name}</td>
+          <td class="px-3 py-2 border text-center whitespace-nowrap">
+            <button class="button btn-edit-customer text-yellow-500 hover:underline" data-id="${item.id}">✏️</button>
+            <button class="btn-delete-customer text-red-600 hover:underline" data-id="${item.id}">🗑️</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      attachCustomerHandlers();  // Bind edit/delete buttons
+    } catch (err) {
+      Swal.fire('Error', err.message, 'error');
+    }
+  }
+
+  function attachCustomerHandlers() {
+    document.querySelectorAll('.btn-edit-customer').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-id');
+        const res = await fetch(`/api/customers/${id}/`);
+        const customer = await res.json();
+
+        const { value: values, isConfirmed } = await Swal.fire({
+          title: 'Edit Customer',
+          html: `
+<label for="swal-full-name" class="block text-left mb-1">Full Name:</label>
+<input id="swal-full-name" class="swal2-input" placeholder="Full Name" value="${customer.full_name}">
+
+<label for="swal-age" class="block text-left mb-1 mt-3">Age:</label>
+<input id="swal-age" type="number" class="swal2-input" placeholder="Age" value="${customer.age}">
+
+<label for="swal-contact" class="block text-left mb-1 mt-3">Contact:</label>
+<input id="swal-contact" class="swal2-input" placeholder="Contact" value="${customer.contact}">
+
+<label for="swal-email" class="block text-left mb-1 mt-3">Email:</label>
+<input id="swal-email" type="email" class="swal2-input" placeholder="Email" value="${customer.email}">
+
+<label for="swal-pharmacy" class="block text-left mb-1 mt-3">Pharmacy Name:</label>
+<input id="swal-pharmacy" class="swal2-input" placeholder="Pharmacy Name" value="${customer.pharmacy_name}">
+
+          `,
+          focusConfirm: false,
+          showCancelButton: true,
+          preConfirm: () => {
+            return {
+              full_name: document.getElementById('swal-full-name').value,
+              age: parseInt(document.getElementById('swal-age').value),
+              contact: document.getElementById('swal-contact').value,
+              email: document.getElementById('swal-email').value,
+              pharmacy_name: document.getElementById('swal-pharmacy').value,
+            };
+          }
+        });
+
+        if (!isConfirmed) return;
+
+        const updateRes = await fetch(`/api/customers/${id}/`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+          },
+          body: JSON.stringify(values)
+        });
+
+        if (updateRes.ok) {
+          Swal.fire('Success', 'Customer updated.', 'success');
+          fetchCustomers();
+        } else {
+          Swal.fire('Error', 'Failed to update customer.', 'error');
+        }
+      });
+    });
+
+    document.querySelectorAll('.btn-delete-customer').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-id');
+        const { isConfirmed } = await Swal.fire({
+          title: 'Are you sure?',
+          text: 'This action cannot be undone!',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, delete it!',
+        });
+
+        if (!isConfirmed) return;
+
+        const res = await fetch(`/api/customers/${id}/`, {
+          method: 'DELETE',
+          headers: { 'X-CSRFToken': csrftoken }
+        });
+
+        if (res.ok) {
+          Swal.fire('Deleted!', 'Customer has been deleted.', 'success');
+          fetchCustomers();
+        } else {
+          Swal.fire('Error', 'Failed to delete customer.', 'error');
+        }
+      });
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', fetchCustomers);
+</script>
+
+    <br><br>
+
+    <!-- Customer Purchase History -->
+    <div class="bg-gray-100 dark:bg-gray-700 p-4 sm:p-6 rounded-md">
+      <h3 class="text-md sm:text-lg font-semibold text-gray-800 dark:text-white mb-4">📜 Customer Purchase History</h3>
+      <div class="overflow-x-auto rounded-md">
+        <table class="w-full min-w-[600px] text-xs sm:text-sm text-left text-gray-800 dark:text-gray-100 border-collapse">
+          <thead class="min-w-full text-left text-sm text-yellow-800 dark:text-green-200">
+            <tr>
+              <th class="px-3 py-2 border">Date</th>
+              <th class="px-3 py-2 border">Medicine</th>
+              <th class="px-3 py-2 text-center border">Quantity</th>
+              <th class="px-3 py-2 border">service provider</th>
+              <th class="px-3 py-2 border">pharmacy name</th>
+              <th class="px-3 py-2 border text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white dark:bg-gray-800"  id="purchase-history-body" >
+
+
+          </tbody>
+        </table>
+                      <br><br>
+            <button
+              class="flex items-center justify-between w-full px-4 py-2 text-sm font-medium leading-5 text-white transition-colors duration-150 bg-purple-600 border border-transparent rounded-lg active:bg-purple-600 hover:bg-purple-700 focus:outline-none focus:shadow-outline-purple"
+            >
+              Add  Customer History
+              <span class="ml-2" aria-hidden="true">+</span>
+            </button>
+      </div>
+    </div>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  // Get CSRF token from cookie
+
+
+  // Fetch purchase history data and populate table
+  async function fetchPurchaseHistory() {
+    try {
+      const res = await fetch('/api/purchase-history/');
+      if (!res.ok) throw new Error('Failed to load purchase history');
+      const data = await res.json();
+
+      const tbody = document.getElementById('purchase-history-body');
+      tbody.innerHTML = '';
+
+      data.forEach(item => {
+        const row = document.createElement('tr');
+        row.className = 'border-t dark:border-gray-600';
+        row.innerHTML = `
+          <td class="px-3 py-2 border">${item.expected_date || ''}</td>
+          <td class="px-3 py-2 border">${item.medicine || ''}</td>
+          <td class="px-3 py-2 border text-center">${item.quantity ?? ''}</td>
+          <td class="px-3 py-2 border">${item.customer || ''}</td>
+          <td class="px-3 py-2 border">${item.pharmacy_name || ''}</td>
+          <td class="px-3 py-2 text-center whitespace-nowrap border">
+            <button class="text-blue-600 dark:text-blue-400 hover:underline mr-2 btn-edit" data-id="${item.id}" title="Edit">✏️</button>
+            <button class="text-red-600 dark:text-red-400 hover:underline btn-delete" data-id="${item.id}" title="Delete">🗑️</button>
+          </td>`;
+        tbody.appendChild(row);
+      });
+
+      setupButtons();
+    } catch (error) {
+      Swal.fire('Error', 'Could not load purchase history.', 'error');
+      console.error(error);
+    }
+  }
+
+  // Edit purchase history entry
+  async function handleEdit(id) {
+    try {
+      const res = await fetch(`/api/purchase-history/${id}/`);
+      if (!res.ok) throw new Error('Failed to fetch purchase history entry');
+      const item = await res.json();
+
+
+
+
+
+const { value: formValues, isConfirmed } = await Swal.fire({
+  title: 'Edit Purchase History',
+  html:
+    `<label class="block text-left mb-1">Date:</label>` +
+    `<input id="swal-date" type="date" class="swal2-input" value="${item.expected_date || ''}">` +
+    `<label class="block text-left mb-1 mt-3">Medicine:</label>` +
+    `<input id="swal-medicine" type="text" class="swal2-input" value="${item.medicine || ''}">` +
+    `<label class="block text-left mb-1 mt-3">Quantity:</label>` +
+    `<input id="swal-quantity" type="number" min="0" class="swal2-input" value="${item.quantity ?? ''}">` +
+    `<label class="block text-left mb-1 mt-3">Service Provider:</label>` +
+    `<input id="swal-service-provider" type="text" class="swal2-input" value="${item.customer || ''}">` +
+    `<label class="block text-left mb-1 mt-3">Pharmacy Name:</label>` +
+    `<input id="swal-pharmacy-name" type="text" class="swal2-input" value="${item.pharmacy_name || ''}">`,
+  focusConfirm: false,
+  showCancelButton: true,
+  preConfirm: () => {
+    const date = document.getElementById('swal-date').value.trim();
+    const medicine = document.getElementById('swal-medicine').value.trim();
+    const quantity = parseInt(document.getElementById('swal-quantity').value, 10);
+    const serviceProvider = document.getElementById('swal-service-provider').value.trim();
+    const pharmacyName = document.getElementById('swal-pharmacy-name').value.trim();
+
+    if (!date) {
+      Swal.showValidationMessage('Date cannot be empty');
+      return false;
+    }
+    if (!medicine) {
+      Swal.showValidationMessage('Medicine cannot be empty');
+      return false;
+    }
+    if (isNaN(quantity) || quantity < 0) {
+      Swal.showValidationMessage('Quantity must be a non-negative number');
+      return false;
+    }
+    if (!serviceProvider) {
+      Swal.showValidationMessage('Service Provider cannot be empty');
+      return false;
+    }
+    if (!pharmacyName) {
+      Swal.showValidationMessage('Pharmacy Name cannot be empty');
+      return false;
+    }
+
+    return {
+      expected_date: date,
+      medicine,
+      quantity,
+      customer: serviceProvider,
+      pharmacy_name: pharmacyName
+    };
+  }
+});
+
+
+
+
+
+
+
+
+
+      if (!isConfirmed) return;
+
+      const updateRes = await fetch(`/api/purchase-history/${id}/`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(formValues),
+      });
+
+      if (!updateRes.ok) throw new Error('Update failed');
+
+      Swal.fire('Updated!', 'Purchase history updated successfully.', 'success');
+      fetchPurchaseHistory();
+    } catch (error) {
+      Swal.fire('Error', error.message || 'Failed to update purchase history.', 'error');
+      console.error(error);
+    }
+  }
+
+  // Delete purchase history entry
+  async function handleDelete(id) {
+    const { isConfirmed } = await Swal.fire({
+      title: 'Are you sure?',
+      text: "This action cannot be undone!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!',
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      const res = await fetch(`/api/purchase-history/${id}/`, {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': csrftoken },
+      });
+      if (!res.ok) throw new Error('Delete failed');
+      Swal.fire('Deleted!', 'Purchase history entry has been deleted.', 'success');
+      fetchPurchaseHistory();
+    } catch (error) {
+      Swal.fire('Error', 'Failed to delete purchase history.', 'error');
+      console.error(error);
+    }
+  }
+
+  // Setup event listeners for edit/delete buttons
+  function setupButtons() {
+    document.querySelectorAll('.btn-edit').forEach(btn =>
+      btn.addEventListener('click', () => handleEdit(btn.dataset.id))
+    );
+    document.querySelectorAll('.btn-delete').forEach(btn =>
+      btn.addEventListener('click', () => handleDelete(btn.dataset.id))
+    );
+  }
+
+  // Initialize fetching purchase history data on page load
+  document.addEventListener('DOMContentLoaded', fetchPurchaseHistory);
+</script>
+
+
+  </div>
+</div>
+{% endblock %}

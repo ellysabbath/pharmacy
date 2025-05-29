@@ -1,0 +1,619 @@
+{% extends 'index.html' %}
+
+{% block title %}Mining Net Time Covered{% endblock %}
+
+{% block content %}
+<div class="w-full px-4 sm:px-6 lg:px-8 py-6 bg-white dark:bg-gray-900">
+  <div class="max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 space-y-10 transition-all duration-300">
+
+    <!-- Page Header -->
+    <h2 class="text-2xl sm:text-3xl font-bold text-center text-gray-900 dark:text-green-400">
+      🏪 Supplier Management Dashboard
+    </h2>
+
+    <!-- Section: Supplier Table -->
+    <section class="bg-gray-100 dark:bg-gray-700 p-6 rounded-md">
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-6">📋 Supplier Information Table</h3>
+
+     <div class="overflow-x-auto rounded-md">
+  <table class="w-full min-w-[600px] text-xs sm:text-sm text-left text-gray-800 dark:text-gray-100 border-collapse">
+    <thead class="bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-gray-100">
+      <tr>
+        <th class="px-4 py-2">Supplier Name</th>
+        <th class="px-4 py-2">Email Address</th>
+        <th class="px-4 py-2">Phone Number</th>
+        <th class="px-4 py-2">Company / Brand Name</th>
+        <th class="px-4 py-2">Action</th>
+      </tr>
+    </thead>
+    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700" id="supplier-table-body"></tbody>
+  </table>
+
+  <br><br>
+  <button id="add-supplier-btn"
+    class="flex items-center justify-between w-full px-4 py-2 text-sm font-medium leading-5 text-white transition-colors duration-150 bg-purple-600 border border-transparent rounded-lg active:bg-purple-600 hover:bg-purple-700 focus:outline-none focus:shadow-outline-purple">
+    Add more supplier Information
+    <span class="ml-2" aria-hidden="true">+</span>
+  </button>
+</div>
+
+ <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  // CSRF token function
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.startsWith(name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+  const csrftoken = getCookie('csrftoken');
+
+  // Fetch all suppliers and populate table
+  async function fetchSuppliers() {
+    try {
+      const res = await fetch('/api/suppliers/');
+      if (!res.ok) throw new Error('Failed to fetch suppliers');
+      const data = await res.json();
+
+      const tbody = document.getElementById('supplier-table-body');
+      tbody.innerHTML = '';
+
+      data.forEach(supplier => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="px-4 py-2">${supplier.supplier_name}</td>
+          <td class="px-4 py-2">${supplier.email}</td>
+          <td class="px-4 py-2">${supplier.phone}</td>
+          <td class="px-4 py-2">${supplier.company_name}</td>
+          <td class="px-4 py-2">
+            <button class="btn-edit text-yellow-500 hover:underline" data-id="${supplier.id}">✏️ Edit</button>
+            <button class="btn-delete text-red-600 hover:underline" data-id="${supplier.id}">🗑️ Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      setupSupplierButtons();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Setup edit/delete button event handlers
+  function setupSupplierButtons() {
+    document.querySelectorAll('.btn-edit').forEach(btn =>
+      btn.addEventListener('click', () => handleSupplierEdit(btn.dataset.id))
+    );
+    document.querySelectorAll('.btn-delete').forEach(btn =>
+      btn.addEventListener('click', () => handleSupplierDelete(btn.dataset.id))
+    );
+  }
+
+  // Add new supplier handler
+  async function handleSupplierAdd() {
+    const { value: formValues, isConfirmed } = await Swal.fire({
+      title: 'Add New Supplier',
+      html: `
+        <input id="swal-name" class="swal2-input" placeholder="Supplier Name">
+        <input id="swal-email" type="email" class="swal2-input" placeholder="Email Address">
+        <input id="swal-phone" class="swal2-input" placeholder="Phone Number">
+        <input id="swal-company_brand" class="swal2-input" placeholder="Company / Brand Name">
+      `,
+      showCancelButton: true,
+      focusConfirm: false,
+      preConfirm: () => ({
+        supplier_name: document.getElementById('swal-name').value,
+        email: document.getElementById('swal-email').value,
+        phone: document.getElementById('swal-phone').value,
+        company_name: document.getElementById('swal-company_brand').value,
+      })
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      const res = await fetch('/api/suppliers/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(formValues)
+      });
+      if (!res.ok) throw new Error('Creation failed');
+      Swal.fire('Created!', 'Supplier added successfully.', 'success');
+      fetchSuppliers();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Edit supplier handler
+  async function handleSupplierEdit(id) {
+    try {
+      const res = await fetch(`/api/suppliers/${id}/`);
+      if (!res.ok) throw new Error('Failed to fetch supplier');
+      const supplier = await res.json();
+
+      const { value: formValues, isConfirmed } = await Swal.fire({
+        title: 'Edit Supplier',
+        html: `
+          <input id="swal-name" class="swal2-input" value="${supplier.supplier_name}" placeholder="Supplier Name">
+          <input id="swal-email" type="email" class="swal2-input" value="${supplier.email}" placeholder="Email Address">
+          <input id="swal-phone" class="swal2-input" value="${supplier.phone}" placeholder="Phone Number">
+          <input id="swal-company_brand" class="swal2-input" value="${supplier.company_name}" placeholder="Company / Brand Name">
+        `,
+        showCancelButton: true,
+        focusConfirm: false,
+        preConfirm: () => ({
+          supplier_name: document.getElementById('swal-name').value,
+          email: document.getElementById('swal-email').value,
+          phone: document.getElementById('swal-phone').value,
+          company_name: document.getElementById('swal-company_brand').value,
+        })
+      });
+
+      if (!isConfirmed) return;
+
+      const updateRes = await fetch(`/api/suppliers/${id}/`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(formValues)
+      });
+
+      if (!updateRes.ok) throw new Error('Update failed');
+      Swal.fire('Updated!', 'Supplier updated successfully.', 'success');
+      fetchSuppliers();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Delete supplier handler
+  async function handleSupplierDelete(id) {
+    const { isConfirmed } = await Swal.fire({
+      title: 'Are you sure?',
+      text: 'This will permanently delete the supplier.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      const res = await fetch(`/api/suppliers/${id}/`, {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': csrftoken }
+      });
+
+      if (!res.ok) throw new Error('Delete failed');
+      Swal.fire('Deleted!', 'Supplier deleted successfully.', 'success');
+      fetchSuppliers();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Initialize on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    fetchSuppliers();
+
+    const addBtn = document.getElementById('add-supplier-btn');
+    if (addBtn) addBtn.addEventListener('click', handleSupplierAdd);
+  });
+</script>
+
+
+
+    </section><br><br>
+
+    <!-- Section: Purchase Orders -->
+    <section class="bg-gray-100 dark:bg-gray-700 p-6 rounded-md space-y-6">
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white">📦 Purchase Orders</h3>
+     <div class="overflow-x-auto rounded-md">
+  <table class="w-full text-sm text-left text-gray-800 dark:text-gray-100">
+    <thead class="bg-gray-200 dark:bg-gray-600">
+      <tr>
+        <th class="px-4 py-2">Order ID</th>
+        <th class="px-4 py-2">Supplier</th>
+        <th class="px-4 py-2">Status</th>
+        <th class="px-4 py-2">Action</th>
+      </tr>
+    </thead>
+    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700" id="purchase-order-table-body">
+    </tbody>
+  </table>
+
+  <br><br>
+  <button id="add-purchase-order-btn"
+    class="flex items-center justify-between w-full px-4 py-2 text-sm font-medium leading-5 text-white transition-colors duration-150 bg-purple-600 border border-transparent rounded-lg active:bg-purple-600 hover:bg-purple-700 focus:outline-none focus:shadow-outline-purple">
+    Add more purchase Orders
+    <span class="ml-2" aria-hidden="true">+</span>
+  </button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+
+
+  // Fetch and display purchase orders
+  async function fetchPurchaseOrders() {
+    try {
+      const res = await fetch('/api/purchase-orders/');
+      if (!res.ok) throw new Error('Failed to fetch purchase orders');
+      const data = await res.json();
+
+      const tbody = document.getElementById('purchase-order-table-body');
+      tbody.innerHTML = '';
+
+      data.forEach(order => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="px-4 py-2">${order.order_id}</td>
+          <td class="px-4 py-2">${order.supplier_name || order.supplier || 'N/A'}</td>
+          <td class="px-4 py-2">${order.status}</td>
+          <td class="px-4 py-2">
+            <button class="btn-edit text-yellow-500 hover:underline" data-id="${order.id}">✏️ Edit</button>
+            <button class="btn-delete text-red-600 hover:underline" data-id="${order.id}">🗑️ Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      setupPurchaseOrderButtons();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Setup edit/delete button handlers
+  function setupPurchaseOrderButtons() {
+    document.querySelectorAll('.btn-edit').forEach(btn =>
+      btn.addEventListener('click', () => handlePurchaseOrderEdit(btn.dataset.id))
+    );
+    document.querySelectorAll('.btn-delete').forEach(btn =>
+      btn.addEventListener('click', () => handlePurchaseOrderDelete(btn.dataset.id))
+    );
+  }
+
+  // Add new purchase order modal
+async function handlePurchaseOrderAdd() {
+  const { value: formValues, isConfirmed } = await Swal.fire({
+    title: 'Add New Purchase Order',
+    html: `
+      <label class="block text-left mb-1">Supplier Name:</label>
+      <input id="swal-supplier" class="swal2-input" placeholder="Supplier Name">
+
+      <label class="block text-left mb-1 mt-3">Status:</label>
+      <select id="swal-status" class="swal2-input" style="border:1px">
+        <option value="Pending">Pending</option>
+        <option value="Received">Received</option>
+      </select>
+    `,
+    showCancelButton: true,
+    focusConfirm: false,
+    preConfirm: () => {
+      const supplier = document.getElementById('swal-supplier').value.trim();
+      const status = document.getElementById('swal-status').value;
+
+      if (!supplier) {
+        Swal.showValidationMessage('Supplier name is required');
+        return false;
+      }
+
+      return {
+        supplier_name: supplier,
+        status: status
+      };
+    }
+  });
+
+    if (!isConfirmed) return;
+
+    try {
+      const res = await fetch('/api/purchase-orders/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(formValues)
+      });
+      if (!res.ok) throw new Error('Creation failed');
+      Swal.fire('Created!', 'Purchase order added successfully.', 'success');
+      fetchPurchaseOrders();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Edit purchase order modal
+  async function handlePurchaseOrderEdit(id) {
+    try {
+      const res = await fetch(`/api/purchase-orders/${id}/`);
+      if (!res.ok) throw new Error('Failed to fetch purchase order');
+      const order = await res.json();
+
+      const { value: formValues, isConfirmed } = await Swal.fire({
+        title: 'Edit Purchase Order',
+        html: `
+          <input id="swal-supplier" class="swal2-input" value="${order.supplier_name || order.supplier || ''}" placeholder="Supplier Name">
+          <input id="swal-status" class="swal2-input" value="${order.status}" placeholder="Status">
+        `,
+        showCancelButton: true,
+        focusConfirm: false,
+        preConfirm: () => ({
+          supplier_name: document.getElementById('swal-supplier').value,
+          status: document.getElementById('swal-status').value
+        })
+      });
+
+      if (!isConfirmed) return;
+
+      const updateRes = await fetch(`/api/purchase-orders/${id}/`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(formValues)
+      });
+
+      if (!updateRes.ok) throw new Error('Update failed');
+      Swal.fire('Updated!', 'Purchase order updated successfully.', 'success');
+      fetchPurchaseOrders();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Delete purchase order handler
+  async function handlePurchaseOrderDelete(id) {
+    const { isConfirmed } = await Swal.fire({
+      title: 'Are you sure?',
+      text: 'This will permanently delete the purchase order.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      const res = await fetch(`/api/purchase-orders/${id}/`, {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': csrftoken }
+      });
+
+      if (!res.ok) throw new Error('Delete failed');
+      Swal.fire('Deleted!', 'Purchase order deleted successfully.', 'success');
+      fetchPurchaseOrders();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Initialize on load
+  document.addEventListener('DOMContentLoaded', () => {
+    fetchPurchaseOrders();
+    const addBtn = document.getElementById('add-purchase-order-btn');
+    if (addBtn) addBtn.addEventListener('click', handlePurchaseOrderAdd);
+  });
+</script>
+
+    </section><br><br>
+
+    <!-- Section: Incoming Stock -->
+    <section class="bg-gray-100 dark:bg-gray-700 p-6 rounded-md space-y-6">
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white">🚚 Incoming Stock</h3>
+     <div class="overflow-x-auto rounded-md">
+  <table class="w-full min-w-[600px] text-xs sm:text-sm text-left text-gray-800 dark:text-gray-100 border-collapse">
+    <thead class="bg-gray-200 dark:bg-gray-600">
+      <tr>
+        <th class="px-4 py-2">Medicine</th>
+        <th class="px-4 py-2">Quantity</th>
+        <th class="px-4 py-2">Expected Date</th>
+        <th class="px-4 py-2">Supplier</th>
+        <th class="px-4 py-2">Action</th>
+      </tr>
+    </thead>
+    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700" id="incoming-stock-table-body"></tbody>
+  </table>
+
+  <br><br>
+  <button id="add-incoming-stock-btn"
+    class="flex items-center justify-between w-full px-4 py-2 text-sm font-medium leading-5 text-white transition-colors duration-150 bg-purple-600 border border-transparent rounded-lg active:bg-purple-600 hover:bg-purple-700 focus:outline-none focus:shadow-outline-purple">
+    Add more incoming stock
+    <span class="ml-2" aria-hidden="true">+</span>
+  </button>
+</div>
+
+ <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+
+
+  // Fetch and display incoming stock
+  async function fetchIncomingStock() {
+    try {
+      const res = await fetch('/api/incoming-stock/');
+      if (!res.ok) throw new Error('Failed to fetch incoming stock');
+      const data = await res.json();
+
+      const tbody = document.getElementById('incoming-stock-table-body');
+      tbody.innerHTML = '';
+
+      data.forEach(stock => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="px-4 py-2">${stock.medicine}</td>
+          <td class="px-4 py-2">${stock.quantity}</td>
+          <td class="px-4 py-2">${stock.expected_date}</td>
+          <td class="px-4 py-2">${stock.supplier_name || stock.supplier || 'N/A'}</td>
+          <td class="px-4 py-2">
+            <button class="btn-edit text-yellow-500 hover:underline" data-id="${stock.id}">✏️ Edit</button>
+            <button class="btn-delete text-red-600 hover:underline" data-id="${stock.id}">🗑️ Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      setupIncomingStockButtons();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Setup edit/delete buttons event listeners
+  function setupIncomingStockButtons() {
+    document.querySelectorAll('.btn-edit').forEach(btn =>
+      btn.addEventListener('click', () => handleIncomingStockEdit(btn.dataset.id))
+    );
+    document.querySelectorAll('.btn-delete').forEach(btn =>
+      btn.addEventListener('click', () => handleIncomingStockDelete(btn.dataset.id))
+    );
+  }
+
+  // Add new incoming stock modal
+  async function handleIncomingStockAdd() {
+    const { value: formValues, isConfirmed } = await Swal.fire({
+      title: 'Add Incoming Stock',
+      html: `
+        <input id="swal-medicine" class="swal2-input" placeholder="Medicine">
+        <input id="swal-quantity" class="swal2-input" placeholder="Quantity" type="number" min="1">
+        <input id="swal-expected-date" class="swal2-input" placeholder="Expected Date" type="date">
+        <input id="swal-supplier" class="swal2-input" placeholder="Supplier Name">
+      `,
+      showCancelButton: true,
+      focusConfirm: false,
+      preConfirm: () => ({
+        medicine: document.getElementById('swal-medicine').value.trim(),
+        quantity: parseInt(document.getElementById('swal-quantity').value),
+        expected_date: document.getElementById('swal-expected-date').value,
+        supplier_name: document.getElementById('swal-supplier').value.trim(),
+      })
+    });
+
+    if (!isConfirmed) return;
+
+    if (!formValues.medicine || !formValues.quantity || !formValues.expected_date || !formValues.supplier_name) {
+      Swal.fire('Error', 'Please fill out all fields correctly.', 'error');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/incoming-stock/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(formValues)
+      });
+      if (!res.ok) throw new Error('Failed to create incoming stock');
+      Swal.fire('Created!', 'Incoming stock added successfully.', 'success');
+      fetchIncomingStock();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Edit incoming stock modal
+  async function handleIncomingStockEdit(id) {
+    try {
+      const res = await fetch(`/api/incoming-stock/${id}/`);
+      if (!res.ok) throw new Error('Failed to fetch incoming stock');
+      const stock = await res.json();
+
+      const { value: formValues, isConfirmed } = await Swal.fire({
+        title: 'Edit Incoming Stock',
+        html: `
+          <input id="swal-medicine" class="swal2-input" value="${stock.medicine}" placeholder="Medicine">
+          <input id="swal-quantity" class="swal2-input" value="${stock.quantity}" placeholder="Quantity" type="number" min="1">
+          <input id="swal-expected-date" class="swal2-input" value="${stock.expected_date}" placeholder="Expected Date" type="date">
+          <input id="swal-supplier" class="swal2-input" value="${stock.supplier_name || stock.supplier || ''}" placeholder="Supplier Name">
+        `,
+        showCancelButton: true,
+        focusConfirm: false,
+        preConfirm: () => ({
+          medicine: document.getElementById('swal-medicine').value.trim(),
+          quantity: parseInt(document.getElementById('swal-quantity').value),
+          expected_date: document.getElementById('swal-expected-date').value,
+          supplier_name: document.getElementById('swal-supplier').value.trim(),
+        })
+      });
+
+      if (!isConfirmed) return;
+
+      if (!formValues.medicine || !formValues.quantity || !formValues.expected_date || !formValues.supplier_name) {
+        Swal.fire('Error', 'Please fill out all fields correctly.', 'error');
+        return;
+      }
+
+      const updateRes = await fetch(`/api/incoming-stock/${id}/`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(formValues)
+      });
+
+      if (!updateRes.ok) throw new Error('Failed to update incoming stock');
+      Swal.fire('Updated!', 'Incoming stock updated successfully.', 'success');
+      fetchIncomingStock();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Delete incoming stock handler
+  async function handleIncomingStockDelete(id) {
+    const { isConfirmed } = await Swal.fire({
+      title: 'Are you sure?',
+      text: 'This will permanently delete the incoming stock record.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      const res = await fetch(`/api/incoming-stock/${id}/`, {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': csrftoken }
+      });
+
+      if (!res.ok) throw new Error('Failed to delete incoming stock');
+      Swal.fire('Deleted!', 'Incoming stock deleted successfully.', 'success');
+      fetchIncomingStock();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+
+  // Initialize on load
+  document.addEventListener('DOMContentLoaded', () => {
+    fetchIncomingStock();
+    const addBtn = document.getElementById('add-incoming-stock-btn');
+    if (addBtn) addBtn.addEventListener('click', handleIncomingStockAdd);
+  });
+</script>
+
+    </section>
+
+  </div>
+</div>
+{% endblock %}
